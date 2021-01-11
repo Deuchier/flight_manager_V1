@@ -1,0 +1,20 @@
+@startuml
+
+hide footbox
+autonumber "<b>##."
+
+participant "s:Session" as S
+participant "us:UserStorage" as US
+
+
+[-> S + : start_reservation(user_id)
+    S -> US + : does user exist?
+    S <-- US - : yes
+    S -> US + : start_reservation(user_id)
+        create "r:Reservation" as R
+        US -> R : with_user_id(user_id)
+    S <-- US - : r_id: ReservationId
+[<-- S - : r_id
+
+
+@enduml

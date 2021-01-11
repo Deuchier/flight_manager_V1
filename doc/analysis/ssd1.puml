@@ -7,7 +7,7 @@ actor "u:User" as U
 participant "s:System" as S
 
 activate U
-U -> S +: start_reservation(user_id)
+U -> S +: start_reservation
 U <-- S : blank reservation session started,\nrid: ReservationId
 loop [more_actions]
     alt

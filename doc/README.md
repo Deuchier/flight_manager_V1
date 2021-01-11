@@ -68,7 +68,19 @@ We can see that system events are fewer than anticipated.
 
 ## Design
 
-### UC1: Reserve Tickets
+### Data-Driven
 
+The specific format of data (such as the tickets) are very subject to change in the future. To reduce maintenance cost,
+I adopted a data-driven approach, only interacting with general types in the code, and implement specific object types
+in configuration files.
 
+### No Databases
+
+If we use databases we would have to bundle a database implementation or require that the user install and set up one.
+For such a demo project it is of little use. So I use only a simple serde method of storing the data.
+
+### Design Class Diagram (DCD) and Sequence Diagrams (SD)
+
+The DCDs and SDs might not contain exact method interfaces for classes. It is only used as a overview of the
+relationship among classes and packages. You should refer to the code document or the source for details.
 

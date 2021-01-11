@@ -2,17 +2,20 @@
 
 package Domain {
     package Sessions {
-        class ReserveTicketsSession {
-            +start_reservation(user_id: String) -> ReservationId
-            +add(r_id, item: ReservableItemId) -> Result
-            +remove(r_id, item) -> Result
-            +summary(r_id) -> String
-            +confirm_reservation(r_id: ReservationId)
-            +abort(r_id)
-            +pay(r_id)
+        interface ReserveTicketsSession {
+            +start_reservation(&mut self, user_id: Strg_clientg) -> ReservationId;
+            +add(&mut self, token: ItemToken) -> Result<()>;
+            +remove(&mut self, token: ItemToken) -> Result<()>;
+            +summary(&self, token: ItemToken) -> Result<Strg_clientg>;
+            +confirm(&mut self, token: UserToken) -> Result<()>;
+            +abort(&mut self, token: UserToken) -> Result<()>;
+            +pay(&mut self, token: UserToken) -> Result<()>;
         }
     }
 
+    package Storage {
+
+    }
 }
 
 @enduml

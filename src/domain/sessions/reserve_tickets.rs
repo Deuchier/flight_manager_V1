@@ -1,7 +1,7 @@
 use anyhow::Result;
 
-use crate::domain::{ReservableItemId, ReservationId};
 use crate::domain::sessions::{ItemToken, UserToken};
+use crate::domain::ReservationId;
 
 /// Reserve-Tickets Session.
 pub trait Session {
