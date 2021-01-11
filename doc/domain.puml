@@ -1,0 +1,53 @@
+@startuml
+
+
+UserInfo "1"-"1" User: describes
+class UserInfo {
+    +user_id
+    +password
+}
+
+User "1"--"1" System : makes reservation\nthrough
+
+System "1"--"*" Reservation : stores
+
+Reservation "1"--"*" ReservableItem : occupies
+interface ReservableItem {
+    +item_id
+}
+
+ReservableItem <|-- PassengerTicket
+
+PassengerTicket "1"--"1" PassengerInfo : records
+PassengerTicket "1"--"1" FlightInfo : records
+
+class PassengerTicket {
+    +seat_id
+}
+
+class PassengerInfo {
+    +name
+    +gender
+    +age
+    +passport_id
+    +contact_methods
+}
+
+FlightInfo -[hidden]left- PassengerInfo
+FlightInfo "1"-"1" Flight: describes
+class Flight {
+    +flight_id
+    +company_id
+}
+
+Flight "1"--"1" Plane: carried out\nby
+Flight "1"--"1" Airport: from
+Flight "1"--"1" Airport: to
+
+class Plane {
+    +plane_id
+}
+
+
+
+@enduml
