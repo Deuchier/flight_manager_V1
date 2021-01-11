@@ -11,7 +11,7 @@ U -> S +: start_reservation(user_id)
 U <-- S : blank reservation session started,\nrid: ReservationId
 loop [more_actions]
     alt
-        U -> S : add(rid, item_id)
+        U -> S : add(rid, item_id: ReservableItemId)
         alt
             U <-- S : Ok: Item available.\n\titem marked as occupied,\n\tadded to the list
         else
@@ -28,7 +28,7 @@ loop [more_actions]
         end
     else
         U -> S : summary(rid)
-        U <-- S : summary of the reservation
+        U <-- S : s: String (serialized form of the reservation)
     end
 end
 U <- S : summary for confirmation
