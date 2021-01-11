@@ -1,0 +1,20 @@
+@startuml
+
+left to right direction
+
+package FlightReservationSystem {
+    (Login) as L
+    (ReserveTickets) as RT
+    (Pay) as P
+    (Refund) as R
+}
+
+Actor User as U
+
+U -- L
+U -- RT
+U -- R
+U -- P
+
+
+@enduml
