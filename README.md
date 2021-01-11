@@ -16,7 +16,7 @@ Alas.
 
 The intrinsic features of a reservation system requires that it stores some states. The states are:
 
-- *User information*. See [code doc](../src/domain/storage/users.rs).
+- *User information*. See [code doc](src/domain/storage/users.rs).
 
 - *Reservable-Items information*. "Reservable Item" is a general term that refers to anything that users are able to
   reserve through this system. The most trivial one should be the passenger tickets. Introducing the abstraction allows
@@ -32,7 +32,7 @@ Correspondingly, the core subsystems are:
 
 ### Glossary
 
-The [glossary](analysis/glossary.md) records terms of the system. However, with the most detailed design documents in the source
+The [glossary](doc/analysis/glossary.md) records terms of the system. However, with the most detailed design documents in the source
 code, the glossary is of little use now. Turned out that it more acted as a memorandum.
 
 ### Use cases
@@ -52,7 +52,7 @@ Some steps do not have strict order. For these cases I may use unordered list (i
 > The three tests of the value of a use case claims that *login* is not a good use case to be started in the analysis
 > phase. It is done in the elaboration phase.
 
-1. [Reserve Tickets](analysis/uc1.md)
+1. [Reserve Tickets](doc/analysis/uc1.md)
 
 ### System Sequence Graph (SSD)
 
