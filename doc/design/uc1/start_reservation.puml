@@ -8,8 +8,8 @@ participant "us:UserStorage" as US
 
 
 [-> S + : start_reservation(user_id)
-    S -> US + : does user exist?
-    S <-- US - : yes
+    S -> US + : user_exists(user_id)
+    S <-- US - : true
     S -> US + : start_reservation(user_id)
         create "r:Reservation" as R
         US -> R : with_user_id(user_id)

@@ -2,7 +2,7 @@
 //!
 //! Each session corresponds to a use case in the analyses
 
-use crate::domain::{ReservationId, ReservableItemId, UserId};
+use crate::domain::{ReservableItemId, ReservationId, UserId};
 
 pub mod reserve_tickets;
 

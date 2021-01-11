@@ -16,10 +16,7 @@ Alas.
 
 The intrinsic features of a reservation system requires that it stores some states. The states are:
 
-- *User information*. Since reservations are involved with money, and refunding is required, we need to record that "who
-  did what reservations". Reservations are no longer stored as an independent state as in previous tries, since it makes
-  little sense for a reservation to live with no owner, and we can easily get around the limitation by providing a void
-  owner.
+- *User information*. See [code doc](../src/domain/storage/users.rs).
 
 - *Reservable-Items information*. "Reservable Item" is a general term that refers to anything that users are able to
   reserve through this system. The most trivial one should be the passenger tickets. Introducing the abstraction allows
