@@ -1,12 +1,15 @@
 @startuml
 
 package Domain {
-    package Session {
+    package Sessions {
         class ReserveTicketsSession {
-            +start_reservation(user_id) -> ReservationId
-            +add(r_id: ReservationId, item: ReservableItemId) -> Result
-            +remove(r_id: ReservationId, item: ReservableItemId) -> Result
+            +start_reservation(user_id: String) -> ReservationId
+            +add(r_id, item: ReservableItemId) -> Result
+            +remove(r_id, item) -> Result
             +summary(r_id) -> String
+            +confirm_reservation(r_id: ReservationId)
+            +abort(r_id)
+            +pay(r_id)
         }
     }
 

@@ -39,7 +39,9 @@ else
     U -> S : confirm(rid)
     U <-- S : reservation stored
     alt
-        U -> S : pay(rid)
+        U -> S : pay_by_cash(rid)
+        U <-- S : payment page
+        U -> S : confirm
         U <-- S : payment successful
     else
         U -> S : decline(rid)

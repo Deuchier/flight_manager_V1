@@ -65,12 +65,17 @@ User
         4. System returns to step 3.
 4. ...
 5. ...
-6. User may also decline the reservation. In this case:
+6. User may decline the reservation. In this case:
     1. System discards all information about the reservation, returning all items in the list.
     2. Reservation aborted.
 7. ...
-8. User may decline to pay, or may have not paid after the time limit. In this case:
-    1. System does as in *Extension step 6*.
+8. In the payment phase...
+    - Cash payment.
+        1. System prompts a payment page to User. The page should contain details of the cost.
+        2. User confirms the payment.
+        3. System updates the reservation as paid.
+    - User may decline to pay, or may have not paid after the time limit. In this case:
+        1. System does as in *Extension step 6*.
 
 ## Special Requirements
 

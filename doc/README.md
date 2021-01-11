@@ -65,3 +65,10 @@ The SSDs are to record external events that the system will respond to. These ar
 3. External errors and exceptions. Since in this lab no external cooperators exist, such events are impossible.
 
 We can see that system events are fewer than anticipated.
+
+## Design
+
+### UC1: Reserve Tickets
+
+
+
