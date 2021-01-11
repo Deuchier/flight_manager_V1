@@ -34,8 +34,8 @@ pub trait Session {
     /// # Return
     /// Returns a serialized form of the reservation.
     ///
-    /// AFA (Jun. 11 '20), I'm using the TOML form instead of the more famous JSON, since the TOML
-    /// is more readable and concise.
+    /// AFA (Jun. 11 '20), I'm using the YAML form instead of the more famous JSON, since YAML is
+    /// more concise and readable than JSON.
     fn summary(&self, token: ItemToken) -> Result<String>;
 
     /// Confirms an reservation.

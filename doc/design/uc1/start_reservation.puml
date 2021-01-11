@@ -5,7 +5,7 @@ autonumber "<b>##."
 
 participant "s:Session" as S
 participant "us:UserStorage" as US
-
+participant "u:User" as U
 
 [-> S + : start_reservation(user_id)
     S -> US + : user_exists(user_id)
@@ -13,7 +13,9 @@ participant "us:UserStorage" as US
     S -> US + : start_reservation(user_id)
         create "r:Reservation" as R
         US -> R : with_user_id(user_id)
-    S <-- US - : r_id: ReservationId
+        US -> U + : list(r_id: ReservationId)
+        US <-- U - : ok
+    S <-- US - : r_id
 [<-- S - : r_id
 
 
