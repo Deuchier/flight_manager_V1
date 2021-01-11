@@ -57,3 +57,11 @@ Some steps do not have strict order. For these cases I may use unordered list (i
 
 1. [Reserve Tickets](uc1.md)
 
+### System Sequence Graph (SSD)
+
+The SSDs are to record external events that the system will respond to. These are:
+1. Events from User.
+2. Time events, such as time limit exceeded for unpaid reservations.
+3. External errors and exceptions. Since in this lab no external cooperators exist, such events are impossible.
+
+We can see that system events are fewer than anticipated.

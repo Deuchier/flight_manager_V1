@@ -1,0 +1,51 @@
+@startuml
+
+hide footbox
+autonumber "<b>##."
+
+actor "u:User" as U
+participant "s:System" as S
+
+activate U
+U -> S +: start_reservation(user_id)
+U <-- S : blank reservation session started,\nrid: ReservationId
+loop [more_actions]
+    alt
+        U -> S : add(rid, item_id)
+        alt
+            U <-- S : Ok: Item available.\n\titem marked as occupied,\n\tadded to the list
+        else
+            U <-- S : Error: Item not available
+        else
+            U <-- S : Error: Item not found
+        end
+    else
+        U -> S : remove(rid, item_id)
+        alt
+            U <-- S : Ok: Item in the list.\n\tItem removed from the list
+        else
+            U <-- S : Error: Item not in reservation list
+        end
+    else
+        U -> S : summary(rid)
+        U <-- S : summary of the reservation
+    end
+end
+U <- S : summary for confirmation
+alt
+    U -> S : decline(rid)
+    U <-- S : reservation aborted
+else
+    U -> S : confirm(rid)
+    U <-- S : reservation stored
+    alt
+        U -> S : pay(rid)
+        U <-- S : payment successful
+    else
+        U -> S : decline(rid)
+        U <-- S : reservation aborted
+    else
+        U <-- S : Error: Payment timeout\n\treservation aborted
+     end
+end
+@enduml

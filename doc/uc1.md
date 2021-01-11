@@ -40,7 +40,7 @@ User
 - At any time, when errors occur:
     - System records the error.
     - System informs User of the error.
-    
+
 1. ...
 2. ...
 3. The actions are:
@@ -75,8 +75,8 @@ User
 ## Special Requirements
 
 - User should pay within 5 minutes. After the limit, the reservation will be aborted.
-- Since the project is only a simulation, we should let the payment succeed under any circumstances. I.e. the tickets are
-free!
+- Since the project is only a simulation, we should let the payment succeed under any circumstances. I.e. the tickets
+  are free!
 - It's okay to have little UI.
 
 ## Notes
@@ -84,3 +84,8 @@ free!
 In *Extensions*, situations such as "item not found in the reservation list" are considered anomaly, for in normal cases
 the user should only see what is valid. I.e. they can only issue *remove* commands on items in the list, and only issue
 *reserve* commands on items available.
+
+## Open issues
+
+Manipulation of reservations should always be verified with user info. For simplicity concerns, I omitted the
+requirement.
