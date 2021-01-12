@@ -1,8 +1,2 @@
-
-
-
 /// Reservable-Item Storage.
-pub trait Storage {
-
-}
-
+pub trait Storage {}

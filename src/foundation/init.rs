@@ -1,11 +1,11 @@
 use crate::domain::ReservationId;
-use std::io::Read;
 use anyhow::Result;
 use serde::Deserialize;
+use std::io::Read;
 
 /// Get the program statistics.
 pub fn program_stats() -> ProgramStats {
-
+    unimplemented!()
 }
 
 /// The statistics from previous runs. When the program restarts, it will read its storage from
@@ -13,7 +13,6 @@ pub fn program_stats() -> ProgramStats {
 pub struct ProgramStats {
     id_pool: ReservationId, // Next id to use
 }
-
 
 impl ProgramStats {
     pub fn reservation_id_pool(&self) -> ReservationId {

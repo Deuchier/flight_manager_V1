@@ -1,6 +1,6 @@
-use crate::domain::{UserId, ReservationId};
-use std::collections::{HashMap};
 use crate::domain::storage::data::user::User;
+use crate::domain::{ReservationId, UserId};
+use std::collections::HashMap;
 
 /// User Storage
 ///
@@ -34,7 +34,7 @@ pub trait Storage: Sync {
     /// # No Error
     /// This function has no reason to fail. However, if with any prospect there will be errors in
     /// the future, it can return `ReservationId::max()`.
-    fn start_reservation(&self, user_id: Userid) -> ReservationId;
+    fn start_reservation(&self, user_id: UserId) -> ReservationId;
 }
 
 /// Get an instance of a user storage. Hides the concrete type.
@@ -43,15 +43,15 @@ pub fn storage_instance() -> &'static dyn Storage {
 }
 
 struct StorageV1 {
-    users: HashMap<UserId, User>
+    users: HashMap<UserId, User>,
 }
 
 impl Storage for StorageV1 {
     fn user_exists(&self, user_id: &UserId) -> bool {
-
+        unimplemented!()
     }
 
-    fn start_reservation(&self, user_id: _) -> u64 {
+    fn start_reservation(&self, user_id: UserId) -> u64 {
         unimplemented!()
     }
 }

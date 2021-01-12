@@ -5,15 +5,19 @@ autonumber "<b>##."
 
 participant "s:Session" as S
 participant "us:UserStorage" as US
-participant "u:User" as U
+participant "rf:ReservationFactory" as RF
 
 [-> S + : start_reservation(user_id)
     S -> US + : user_exists(user_id)
     S <-- US - : true
     S -> US + : start_reservation(user_id)
-        create "r:Reservation" as R
-        US -> R : with_user_id(user_id)
-        US -> U + : list(r_id: ReservationId)
+        US -> RF + : with_user_id(user_id)
+            create "r:Reservation" as R
+            RF --> R : create
+        US <-- RF - :  r: Reservation
+        US -> US : store(r)
+        participant "u:User" as U
+        US -> U + : link(r_id: ReservationId)
         US <-- U - : ok
     S <-- US - : r_id
 [<-- S - : r_id
