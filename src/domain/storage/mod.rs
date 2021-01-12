@@ -7,6 +7,6 @@
 //! references in the modifying method calls are declared as immutable. The implementors should
 //! use synchronization facilities carefully.
 
-mod data;
+pub mod data;
 pub mod items;
 pub mod users;

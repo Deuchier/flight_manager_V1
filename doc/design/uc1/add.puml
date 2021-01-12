@@ -1,0 +1,28 @@
+@startuml
+
+hide footbox
+autonumber "<b>##."
+
+participant "s:Session" as S
+participant "ar:ActiveReservations" as AR
+participant "r:Reservation" as R
+participant "is:ItemStorage" as IS
+
+[-> S + : add(user_id, r_id, item_id)
+    S -> IS + : occupy(item_id)
+    S <- IS - : Ok
+    S -> AR + : checked_write(user_id, r_id)
+        AR -> R + : user_id()
+        AR <-- R - : user_id_1
+        AR -> AR : user_id == user_id_1
+    S <-- AR - : r: RwLockWriteGuard<Reservation>
+    S -> R + : add(item_id)
+    S <-- R - : Ok, no duplicates
+    note right
+        If duplicate found, must
+        call `release` on IS.
+    end note
+[<-- S - : Ok
+
+
+@enduml

@@ -8,7 +8,11 @@ participant "s:System" as S
 
 activate U
 U -> S +: start_reservation
-U <-- S : blank reservation session started,\nrid: ReservationId
+alt
+    U <-- S : blank reservation session started,\nrid: ReservationId
+else
+    U <-- S : Error: User not found.
+end
 loop [more_actions]
     alt
         U -> S : add(rid, item_id: ReservableItemId)
@@ -31,6 +35,14 @@ loop [more_actions]
         U <-- S : s: String (serialized form of the reservation)
     end
 end
+note right
+    In implementation, the user will
+    send their ids every time they
+    issue a request. If the id is
+    inconsistent, the system will
+    also return an Error, which is
+    not shown here.
+end note
 U <- S : summary for confirmation
 alt
     U -> S : decline(rid)

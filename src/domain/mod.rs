@@ -8,5 +8,5 @@ pub mod sessions;
 mod storage;
 
 pub type UserId = String; // UserId is the internal id of a user. They can also have nicknames.
-pub type ReservationId = u64;
+pub type ReservationId = u64; // This id must be `Copy`.
 pub type ReservableItemId = String; // Is a String for it may be defined by external organizations.

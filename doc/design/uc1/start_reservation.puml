@@ -6,21 +6,25 @@ autonumber "<b>##."
 participant "s:Session" as S
 participant "us:UserStorage" as US
 participant "rf:ReservationFactory" as RF
+participant "ar:ActiveReservations" as AR
 
 [-> S + : start_reservation(user_id)
     S -> US + : user_exists(user_id)
     S <-- US - : true
-    S -> US + : start_reservation(user_id)
-        US -> RF + : with_user_id(user_id)
-            create "r:Reservation" as R
-            RF --> R : create
-        US <-- RF - :  r: Reservation
-        US -> US : store(r)
-        participant "u:User" as U
-        US -> U + : link(r_id: ReservationId)
-        US <-- U - : ok
-    S <-- US - : r_id
+    S -> RF + : with_user_id(user_id)
+        create "r:Reservation" as R
+        RF --> R : create
+    S <-- RF - : r: Reservation
+    S -> R + : id
+    S <-- R - : r_id: ReservationId
+    S -> AR + : store_active(r)
+    S <-- AR - : Ok
 [<-- S - : r_id
+note bottom
+    Note that the reservation is temporarily stored in s:Session.
+    It is not until `confirm` is called that the reservation
+    will be eventually stored into us:UserStorage.
+end note
 
 
 @enduml

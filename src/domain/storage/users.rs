@@ -1,6 +1,10 @@
+use crate::domain::storage::data::reservation::{Reservation, ReservationFactory};
 use crate::domain::storage::data::user::User;
 use crate::domain::{ReservationId, UserId};
+use anyhow::{anyhow, Result};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::RwLock;
 
 /// User Storage
 ///
@@ -19,22 +23,15 @@ pub trait Storage: Sync {
 
     /// Starts a new reservation for the user.
     ///
-    /// # Internal mutability
-    /// The function receives `&self` instead of mutable references. It is because that when
-    /// creating new reservations, it is okay for other threads reading user data to report that
-    /// the user has not created a new reservation.
-    ///
-    /// It is actually the case. The reservation will only be added to the list of a reservation
-    /// until confirmation. Therefore, we need only a very fine-grade lock when confirming
-    /// reservations.
-    ///
     /// # Temporary Reservation
     /// See [start_reservation](crate::domain::sessions::reserve_tickets::Session::start_reservation).
     ///
     /// # No Error
     /// This function has no reason to fail. However, if with any prospect there will be errors in
     /// the future, it can return `ReservationId::max()`.
-    fn start_reservation(&self, user_id: UserId) -> ReservationId;
+    ///
+    /// TODO: delete this function. Starting a reservation is not the responsibility of a storage.
+    fn start_reservation(&self, user_id: UserId) -> Result<ReservationId>;
 }
 
 /// Get an instance of a user storage. Hides the concrete type.
@@ -42,16 +39,47 @@ pub fn storage_instance() -> &'static dyn Storage {
     unimplemented!()
 }
 
-struct StorageV1 {
-    users: HashMap<UserId, User>,
+/// # Lifetime
+/// The struct dies before the reservation factory is dropped.
+#[derive(Serialize, Deserialize)]
+pub struct StorageV1<'a> {
+    users: RwLock<HashMap<UserId, User>>,
+    reservations: RwLock<HashMap<ReservationId, Reservation>>,
+    factory: &'a ReservationFactory,
 }
 
-impl Storage for StorageV1 {
+impl<'a> Storage for StorageV1<'a> {
     fn user_exists(&self, user_id: &UserId) -> bool {
-        unimplemented!()
+        self.users
+            .read()
+            .expect("Storage thread poisoned")
+            .contains_key(user_id)
     }
 
-    fn start_reservation(&self, user_id: UserId) -> u64 {
-        unimplemented!()
+    fn start_reservation(&self, user_id: UserId) -> Result<ReservationId> {
+        if !self.user_exists(&user_id) {
+            return Err(anyhow!("User not found"));
+        }
+
+        let new = self.factory.with_user_id(user_id);
+        let id = new.id();
+        self.users
+            .write()
+            .expect("Storage thread poisoned")
+            .get_mut(new.user_id())
+            .expect("I should've checked that the user is in the list??")
+            .link(id)
+            .expect("Error: Reservation Id conflict");
+
+        assert!(
+            self.reservations
+                .write()
+                .expect("Storage thread poisoned")
+                .insert(id, new)
+                .is_none(),
+            "Reservation Id should be unique"
+        );
+
+        Ok(id)
     }
 }
