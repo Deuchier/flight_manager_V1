@@ -1,12 +1,12 @@
 //! Storage.
 //!
-//! Provides interface for persistent storage objects.
-//!
-//! # Multiprocessor Parallelism
-//! All storage objects should support synchronization mechanisms. For this reason, even the `self`
-//! references in the modifying method calls are declared as immutable. The implementors should
-//! use synchronization facilities carefully.
+//! - Provides interface for storages.
+//! - Provides concurrent accessibility.
+//! - Some are persistent, others are temporary
+//! - Does NOT guarantee any check on links. E.g. it is up to the session controllers to ensure that
+//! the `Users` don't store `ReservationId`s of which reservation that do not belong to them.
 
 pub mod data;
 pub mod items;
+pub mod reservation;
 pub mod users;

@@ -13,6 +13,6 @@ pub mod reserve_tickets;
 pub type UserToken<'a> = (&'a UserId, &'a ReservationId);
 pub type ItemToken<'a> = (&'a UserId, &'a ReservationId, &'a ReservableItemId);
 
-fn make_user_token(tok: &ItemToken) -> UserToken {
-    UserToken { 0: tok.0, 1: tok.1 }
+fn make_user_token<'a>(tok: &'a ItemToken) -> UserToken<'a> {
+    (tok.0, tok.1)
 }

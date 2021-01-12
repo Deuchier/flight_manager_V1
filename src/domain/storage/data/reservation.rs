@@ -1,6 +1,6 @@
 use crate::domain::storage::data::user::User;
 use crate::domain::{ReservableItemId, ReservationId, UserId};
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use boolinator::Boolinator;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;

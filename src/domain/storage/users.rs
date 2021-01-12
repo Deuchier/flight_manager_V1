@@ -34,21 +34,16 @@ pub trait Storage: Sync {
     fn start_reservation(&self, user_id: UserId) -> Result<ReservationId>;
 }
 
-/// Get an instance of a user storage. Hides the concrete type.
-pub fn storage_instance() -> &'static dyn Storage {
-    unimplemented!()
-}
-
 /// # Lifetime
 /// The struct dies before the reservation factory is dropped.
 #[derive(Serialize, Deserialize)]
-pub struct StorageV1<'a> {
+pub struct StorageV1 {
     users: RwLock<HashMap<UserId, User>>,
     reservations: RwLock<HashMap<ReservationId, Reservation>>,
-    factory: &'a ReservationFactory,
+    factory: ReservationFactory,
 }
 
-impl<'a> Storage for StorageV1<'a> {
+impl Storage for StorageV1 {
     fn user_exists(&self, user_id: &UserId) -> bool {
         self.users
             .read()

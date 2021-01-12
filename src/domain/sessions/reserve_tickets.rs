@@ -1,19 +1,20 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 
 use crate::domain::sessions::{ItemToken, UserToken};
 use crate::domain::storage::data::reservation::{Reservation, ReservationFactory};
 use crate::domain::storage::data::user::User;
-use crate::domain::storage::users;
+use crate::domain::storage::reservation::{ActiveReservations, Storage};
+use crate::domain::storage::{items, users};
 use crate::domain::{ReservationId, UserId};
+use dashmap::DashMap;
+use std::borrow::BorrowMut;
 use std::collections::HashMap;
-use std::sync::{Mutex, RwLock, RwLockWriteGuard};
+use std::sync::{Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::time::{Duration, Instant};
 
 /// Reserve-Tickets Session.
 pub trait Session {
     /// Start a new reservation for the user. Returns a unique id for identifying the reservation.
-    ///
-    /// The function receives the user's id as a `String` and stores it in the reservation.
     ///
     /// # Temporary Reservation
     /// This call starts a temporary reservation. Until confirmed, the reservation may not be
@@ -21,7 +22,14 @@ pub trait Session {
     ///
     /// # Error
     /// if the user is not found.
-    fn start_reservation(&self, user_id: String) -> Result<ReservationId>;
+    ///
+    /// # Implementation
+    /// Specifically, the method collaborates with others in this way:
+    /// 1. check with the user storage to see if the user id is valid.
+    /// 2. ask a reservation factory to produce a new reservation for the user.
+    /// 3. store the new reservation to the active-reservation storage.
+    /// 4. return the id of the reservation.
+    fn start_reservation(&self, user_id: UserId) -> Result<ReservationId>;
 
     /// Adds a reservable item to the reservation list.
     ///
@@ -78,43 +86,28 @@ pub trait Session {
 }
 
 /// # Lifetime
-/// ReserveTicketsSessions live no longer than either ('a) the User Storage it refers to, or ('b)
-/// the factory that produces reservations.
-pub struct SessionV1<'a, 'b> {
-    // Outer lock for inserting new elements into the vec.
-    // Inner lock for visiting a certain reservation.
-    active_reservations: RwLock<HashMap<ReservationId, RwLock<Reservation>>>,
+/// `ReserveTicketsSession`s live no longer than
+/// - ('a) the active-reservation storage;
+/// - ('b) the User Storage;
+/// - ('c) the Item Storage.
+pub struct SessionV1<'a, 'b, 'c> {
     // Might not be too many temps, so a Vec will do.
     // Confirmed reservations waiting to be paid.
     // We need only one modification to them when they are popped from the Vec, so no need to
     // add locks.
     pending_reservations: Vec<TempReservation>,
-    users: &'a dyn users::Storage,
-    factory: &'b ReservationFactory,
+    active_reservations: ActiveReservations<'a>,
+    users: &'b dyn users::Storage,
+    items: &'c dyn items::Storage,
 }
 
-struct TempReservation {
-    deadline: Instant,
-    inner: Reservation,
-}
-
-/// Timeout for a new reservation.
-///
-/// This is the max elapse from when a reservation has been confirmed to when it is paid.
-const TEMP_RESERVATION_TIMEOUT: Duration = Duration::from_secs(5 * 60);
-
-impl<'a, 'b> Session for SessionV1<'a, 'b> {
+impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
     fn start_reservation(&self, user_id: UserId) -> Result<ReservationId> {
         if !self.users.user_exists(&user_id) {
             return Err(anyhow!("User not found"));
         }
 
-        let reservation = self.factory.with_user_id(user_id);
-        let reservation_id = reservation.id();
-
-        self.store_active(reservation);
-
-        Ok(reservation_id)
+        Ok(self.active_reservations.new_reservation(user_id))
     }
 
     fn add(&self, token: ItemToken) -> Result<()> {
@@ -142,33 +135,14 @@ impl<'a, 'b> Session for SessionV1<'a, 'b> {
     }
 }
 
-impl<'a, 'b> SessionV1<'a, 'b> {
-    fn store_active(&self, r: Reservation) {
-        assert!(
-            self.active_reservations
-                .write()
-                .expect("Reserve Tickets Session thread poisoned")
-                .insert(r.id(), RwLock::new(r))
-                .is_none(),
-            "Reservation Id conflicted"
-        );
-    }
-
-    /// Check if the provided token conforms with the internal records. If so, returns a write
-    /// guard to the reservation.
-    fn checked_write(&self, tok: UserToken) -> Result<RwLockWriteGuard<Reservation>> {
-        let ret = self
-            .active_reservations
-            .read()
-            .expect("Reserve Tickets Session thread poisoned")
-            .get(tok.1)
-            .ok_or(anyhow!("Reservation not active"))?
-            .write()
-            .expect("Reserve Tickets Session thread poisoned");
-        if ret.user_id() != tok.0 {
-            Err(anyhow!("User id not conformant with the reservation"))
-        } else {
-            Ok(ret)
-        }
-    }
+struct TempReservation {
+    deadline: Instant,
+    inner: Reservation,
 }
+
+/// Timeout for a new reservation.
+///
+/// This is the max elapse from when a reservation has been confirmed to when it is paid.
+const TEMP_RESERVATION_TIMEOUT: Duration = Duration::from_secs(5 * 60);
+
+impl<'a, 'b> SessionV1<'a, 'b> {}
