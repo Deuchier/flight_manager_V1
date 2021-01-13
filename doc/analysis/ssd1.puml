@@ -6,8 +6,7 @@ autonumber "<b>##."
 actor "u:User" as U
 participant "s:System" as S
 
-activate U
-U -> S +: start_reservation
+U -> S : start_reservation
 alt
     U <-- S : blank reservation session started,\nr_id: ReservationId
 else

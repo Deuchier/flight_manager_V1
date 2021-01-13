@@ -52,7 +52,7 @@ Some steps do not have strict order. For these cases I may use unordered list (i
 > The three tests of the value of a use case claims that *login* is not a good use case to be started in the analysis
 > phase. It is done in the elaboration phase.
 
-1. [Reserve Tickets](doc/analysis/uc1.md)
+1. [Reserve Tickets](doc/analysis/uc1_reserve_tickets.md)
 
 ### System Sequence Graph (SSD)
 

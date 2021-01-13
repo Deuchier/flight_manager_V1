@@ -8,3 +8,10 @@
 use crate::domain::{ReservableItemId, ReservationId, UserId};
 
 pub mod reserve_tickets;
+pub mod view_flights;
+
+
+/// Querying configuration.
+pub struct Query {
+
+}

@@ -10,7 +10,17 @@ mod payment;
 
 pub type UserId = String; // UserId is the internal id of a user. They can also have nicknames.
 pub type ReservationId = u64; // This id must be `Copy`.
-pub type ReservableItemId = String; // Is a String for it may be defined by external organizations.
+
+#[derive(Clone)]
+pub struct ReservableItemId {
+    flight_id: String,
+    internal_id: String,
+}
+
+impl ReservableItemId {
+    pub fn id() {} //todo
+}
+
 
 /// Helper types for simplifying the signature of the sessions.
 ///

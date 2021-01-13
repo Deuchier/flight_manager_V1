@@ -7,9 +7,12 @@ package FlightReservationSystem {
     package Core {
         (ViewFlights) as V
         (ReserveTickets) as RT
-        (Pay) as P
+        (Withdraw) as W
 
-        RT -left- P : involves
+        (Pay) as P
+        (View Profile) as VP
+
+        RT -- P : involves
     }
     (Refund) as R
 }
@@ -20,6 +23,8 @@ U -- L
 U -- RT
 U -- R
 U -- V
+U -- W
+U -- VP
 
 
 @enduml
