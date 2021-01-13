@@ -50,22 +50,32 @@ impl Reservation {
     }
 }
 
+/// Trait representing a reservation factory.
+///
+/// # Initialization and Sync
+/// This trait must be implemented with care. Reservations should have unique ids. Multiple
+/// instances of factories should produce their products with conforming ids. Singletons could be
+/// preferred, which should be taken care of in the initialization.
+pub trait ReservationFactory {
+    /// Creates a new reservation with the given user id.
+    ///
+    /// Each reservation should have a unique id. They get the id atomically.
+    fn with_user_id(&self, user_id: UserId) -> Reservation;
+}
+
 /// Singleton factory building reservations. It stores an internal state of the next id, which will
 /// be stored persistently so that even after restarts the ids are still consistent.
 ///
 /// # Serde
 /// Serde required because it needs to be restored after restart of the program.
 #[derive(Serialize, Deserialize)]
-pub struct ReservationFactory {
+pub struct ReservationFactoryV1 {
     // TODO: finish initialization.
     next_id: AtomicU64,
 }
 
-impl ReservationFactory {
-    /// Creates a new reservation with the given user id.
-    ///
-    /// Each reservation should have a unique id. They get the id atomically.
-    pub fn with_user_id(&self, user_id: UserId) -> Reservation {
+impl ReservationFactory for ReservationFactoryV1 {
+    fn with_user_id(&self, user_id: UserId) -> Reservation {
         Reservation {
             // Relaxed because nobody else uses the atomic value.
             id: self.next_id.fetch_add(1, Ordering::Relaxed),
@@ -73,7 +83,9 @@ impl ReservationFactory {
             items: Default::default(),
         }
     }
+}
 
+impl ReservationFactoryV1 {
     /// Creates a new reservation factory
     ///
     /// # Unsafe
@@ -88,7 +100,7 @@ impl ReservationFactory {
 
 #[cfg(test)]
 mod test {
-    use crate::domain::storage::data::reservation::{Reservation, ReservationFactory};
+    use crate::domain::storage::data::reservation::{Reservation, ReservationFactoryV1};
     use crate::foundation::file_writer::SimpleWriter;
     use std::collections::HashSet;
     use std::io::Write;
@@ -97,7 +109,7 @@ mod test {
     #[test]
     fn serde() {
         let reservation = test_reservation();
-        let factory = unsafe { ReservationFactory::new(24) };
+        let factory = unsafe { ReservationFactoryV1::new(24) };
         let mut writer = SimpleWriter::new("./tmp/test_reservation.json");
         serde_json::to_writer(writer.writer(), &reservation).unwrap();
         // emm, json only allows one top-level object.

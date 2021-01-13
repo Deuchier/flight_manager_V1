@@ -1,4 +1,4 @@
-use crate::domain::{ReservationId, UserId};
+use crate::domain::{ReservationId, UserId, RSV_CONFLICT};
 use anyhow::Result;
 use serde::Deserialize;
 use serde::Serialize;
@@ -11,30 +11,14 @@ pub struct User {
 }
 
 impl User {
-    /// Links an item with the user.
+    /// Links a reservation with the user.
     ///
-    /// # Error
-    /// If the id is already in the user's profile, returns `Err`.
-    ///
-    /// It is very dangerous when this function returns `Err`. There may be potential reservation-id
-    /// conflicts then.
-    pub fn link(&mut self, id: ReservationId) -> Result<()> {
-        if self.reservations.insert(id) {
-            Ok(())
-        } else {
-            Err(anyhow::anyhow!("Reservation already in the list"))
+    /// # Panic
+    /// if the reservation id is already in the user's profile. It is very dangerous because there
+    /// may be potential reservation-id conflicts.
+    pub fn link(&mut self, id: ReservationId) {
+        if !self.reservations.insert(id) {
+            panic!(RSV_CONFLICT);
         }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::domain::storage::data::user::User;
-
-    #[test]
-    fn serde() {}
-
-    fn get_test_user() -> User {
-        unimplemented!()
     }
 }

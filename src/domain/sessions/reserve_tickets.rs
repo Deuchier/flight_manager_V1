@@ -6,11 +6,11 @@ use std::time::{Duration, Instant};
 use anyhow::{anyhow, Context, Error, Result};
 use dashmap::DashMap;
 
-use crate::domain::storage::data::reservation::{Reservation, ReservationFactory};
+use crate::domain::storage::data::reservation::{Reservation, ReservationFactoryV1};
 use crate::domain::storage::data::user::User;
-use crate::domain::storage::reservation::{ActiveReservations, Storage};
+use crate::domain::storage::reservation::{Storage, StorageV1, CreativeStorage};
 use crate::domain::storage::{items, users};
-use crate::domain::{ItemToken, ReservationId, UserId, UserToken, USER_NOT_FOUND, LOCK_POISONED};
+use crate::domain::{ItemToken, ReservationId, UserId, UserToken, LOCK_POISONED, USER_NOT_FOUND};
 use std::ops::Add;
 
 /// Reserve-Tickets Session.
@@ -77,7 +77,7 @@ pub trait Session {
     /// The aborted reservation will not be stored in the system.
     ///
     /// # Error
-    /// if the reservation has already been paid. You should call `refund` instead of `abort`.
+    /// if the reservation is not active.
     fn abort(&self, token: UserToken) -> Result<()>;
 
     /// Pays for a reservation.
@@ -96,14 +96,9 @@ pub trait Session {
     fn pay(&self, token: UserToken) -> Result<()>;
 }
 
-/// # Lifetime
-/// `ReserveTicketsSession`s live no longer than
-/// - ('a) the active-reservation storage;
-/// - ('b) the User Storage;
-/// - ('c) the Item Storage.
 pub struct SessionV1<'a, 'b, 'c> {
     pending_reservations: RwLock<Vec<TempReservation>>,
-    active_reservations: ActiveReservations<'a>,
+    active_reservations: StorageV1<'a>,
     users: &'b dyn users::Storage,
     items: &'c dyn items::Storage,
 }
@@ -141,7 +136,10 @@ impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
     fn confirm(&self, token: UserToken) -> Result<()> {
         let reservation = self.active_reservations.authenticated_extract(token)?;
         let mut guard = self.pending_reservations.write().unwrap();
-        Ok(guard.push(TempReservation::with_wait_time(reservation, TMP_RSV_TIMEOUT)))
+        Ok(guard.push(TempReservation::with_wait_time(
+            reservation,
+            TMP_RSV_TIMEOUT,
+        )))
     }
 
     fn abort(&self, token: UserToken) -> Result<()> {
@@ -150,8 +148,28 @@ impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
     }
 
     fn pay(&self, token: UserToken) -> Result<()> {
+        // todo
         unimplemented!()
     }
+}
+
+/// Helpers
+impl<'a, 'b, 'c> SessionV1<'a, 'b, 'c> {
+    /// # None
+    /// if user not found
+    fn authenticated_extract_tmp(&self, tok: UserToken) -> Option<Reservation> {
+        let mut pending_reservations = self.pending_reservations.write().unwrap();
+
+        let pos = pending_reservations
+            .iter()
+            .position(|r| r.reservation.user_id() == tok.0)?;
+
+        pending_reservations.swap(pos, pending_reservations.len() - 1);
+
+        let ret = Reservation::from(pending_reservations.pop().unwrap());
+        unimplemented!()
+    }
+
 }
 
 // TODO: Implement wait-up mechanisms
@@ -160,12 +178,22 @@ struct TempReservation {
     reservation: Reservation,
 }
 
+impl From<TempReservation> for Reservation {
+    /// **Does NOT check if the deadline is passed**
+    ///
+    /// I could have checked it here, but a problem occurs: What if when externally checking the
+    /// deadline it was not passed, yet when extracting it, the reserve is true?
+    fn from(t: TempReservation) -> Self {
+        t.reservation
+    }
+}
+
 impl TempReservation {
     /// Create a clock-counted reservation pack with the designated duration.
     fn with_wait_time(reservation: Reservation, wait_for: Duration) -> Self {
         Self {
             deadline: Instant::now().add(wait_for),
-            reservation
+            reservation,
         }
     }
 }
