@@ -40,12 +40,12 @@ pub trait Session {
     /// - if any of the user, the reservation, or the item is not found;
     /// - if the reservation is already confirmed or not valid (e.g. aborted).
     /// - if the item is occupied, which is possible with multiple users accessing the system.
-    fn add(&self, token: ItemToken) -> Result<()>;
+    fn add_item(&self, token: ItemToken) -> Result<()>;
 
     /// Removes an item from the list.
     ///
     /// Similar to `add`.
-    fn remove(&self, token: ItemToken) -> Result<()>;
+    fn remove_item(&self, token: ItemToken) -> Result<()>;
 
     /// Gets a summary of the current state of the reservation.
     ///
@@ -117,20 +117,20 @@ impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
         Ok(self.active_reservations.new_reservation(user_id))
     }
 
-    fn add(&self, token: ItemToken) -> Result<()> {
+    fn add_item(&self, token: ItemToken) -> Result<()> {
         // Occupy the item first in case it is preempted by others.
         self.items.occupy(token.2)?;
 
         self.active_reservations
-            .authenticated_add(token)
+            .authenticated_add_item(token)
             .or_else(|e| {
                 self.items.release(token.2);
                 Err(e)
             })
     }
 
-    fn remove(&self, token: ItemToken) -> Result<()> {
-        self.active_reservations.authenticated_remove(token)?;
+    fn remove_item(&self, token: ItemToken) -> Result<()> {
+        self.active_reservations.authenticated_remove_item(token)?;
         Ok(self.items.release(token.2)) // Ok for the tuple is `Copy`
     }
 
@@ -145,7 +145,8 @@ impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
     }
 
     fn abort(&self, token: UserToken) -> Result<()> {
-        unimplemented!()
+        self.active_reservations.authenticated_extract(token)?;
+        Ok(())
     }
 
     fn pay(&self, token: UserToken) -> Result<()> {

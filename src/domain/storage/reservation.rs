@@ -27,9 +27,9 @@ pub trait Storage {
     /// # Error
     /// - if user id not conformant
     /// - if reservation not found.
-    fn authenticated_add(&self, tok: ItemToken) -> Result<()>;
+    fn authenticated_add_item(&self, tok: ItemToken) -> Result<()>;
 
-    fn authenticated_remove(&self, tok: ItemToken) -> Result<()>;
+    fn authenticated_remove_item(&self, tok: ItemToken) -> Result<()>;
 
     /// Generate a summary of the reservation.
     ///
@@ -82,12 +82,12 @@ impl<'f> Storage for ActiveReservations<'f> {
         assert!(self.reservations.insert(r.id(), r).is_none(), RSV_CONFLICT);
     }
 
-    fn authenticated_add(&self, tok: ItemToken) -> Result<()> {
+    fn authenticated_add_item(&self, tok: ItemToken) -> Result<()> {
         let mut reservation = self.checked_rsv_mut(make_user_token(&tok))?;
         reservation.add(tok.2.clone())
     }
 
-    fn authenticated_remove(&self, tok: ItemToken) -> Result<()> {
+    fn authenticated_remove_item(&self, tok: ItemToken) -> Result<()> {
         let mut reservation = self.checked_rsv_mut(make_user_token(&tok))?;
         reservation.remove(tok.2)
     }
