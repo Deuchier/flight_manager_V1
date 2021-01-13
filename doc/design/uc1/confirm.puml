@@ -1,0 +1,12 @@
+@startuml
+
+hide footbox
+autonumber "<b>##."
+
+participant "s:Session" as S
+participant "is:ItemStorage" as IS
+participant "ar:ActiveReservationStorage" as AR
+participant "r:Reservation" as R
+
+[-> S + :
+@enduml

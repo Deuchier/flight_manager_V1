@@ -64,13 +64,9 @@ pub trait Session {
 
     /// Confirms an reservation.
     ///
-    /// Calling this function will terminate modifying process of the reservation (i.e. `add` or
-    /// `remove`). Any subsequent calls to the functions or this function will result in an error.
+    /// Calling this function will terminate the modifying process of the reservation (i.e. `add` or
+    /// `remove`). Any subsequent calls to those functions or this one will result in an error.
     ///
-    /// # Persistent Storage
-    /// Calling this function will cause the reservation to be persistently stored into the user's
-    /// profile. This function must be called before ending a reservation, unless errors occur, or
-    /// the user wish to abort the reservation.
     fn confirm(&self, token: UserToken) -> Result<()>;
 
     /// Aborts a reservation that's not paid yet.
@@ -78,14 +74,22 @@ pub trait Session {
     /// The aborted reservation will not be stored in the system.
     ///
     /// # Error
-    /// If the reservation has already been paid, then the function will return `Err`. You should
-    /// use the `refund` functionality instead of `abort`.
+    /// if the reservation has already been paid. You should call `refund` instead of `abort`.
     fn abort(&self, token: UserToken) -> Result<()>;
 
-    /// Pays for a reservaiton.
+    /// Pays for a reservation.
+    ///
+    /// # After
+    /// calling confirm. If the reservation is not confirmed yet, it will not be
     ///
     /// # Error
-    /// Returns `Err` if the payment failed, or the reservation is already paid.
+    /// - if the payment failed
+    /// - if the reservation is already paid.
+    /// - if the reservation is not found.
+    ///
+    /// # Persistent Storage
+    /// On success, the function will store the reservation into the user's profile. It is not until
+    /// this function is called that a reservation will finally be stored in the user's profile.
     fn pay(&self, token: UserToken) -> Result<()>;
 }
 
