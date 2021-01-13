@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 
 pub type UserId = String; // UserId is the internal id of a user. They can also have nicknames.
 pub type ReservationId = u64; // This id must be `Copy`.
+pub type FlightId = String;
 
 #[derive(Clone, Serialize, Deserialize, Hash, Eq, PartialEq)]
 pub struct ReservableItemId {

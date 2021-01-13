@@ -10,9 +10,8 @@ use crate::foundation::errors::{item_not_available, item_not_found};
 
 /// Reservable-Item Storage.
 ///
-/// This storage records the states of items. If an item is to be occupied by a reservation, the
-/// session controller must call corresponding methods on the storage to update the item's state,
-/// and *in careful sequence*.
+/// It is up to the caller to ensure that external references into this storage are correctly
+/// handled.
 pub trait Storage: Sync {
     /// Atomically occupies an item.
     ///

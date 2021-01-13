@@ -6,3 +6,4 @@
 pub mod item;
 pub mod reservation;
 pub mod user;
+pub mod flight;
