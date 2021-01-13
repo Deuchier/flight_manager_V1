@@ -12,7 +12,7 @@ use std::intrinsics::unlikely;
 /// This storage records the states of items. If an item is to be occupied by a reservation, the
 /// session controller must call corresponding methods on the storage to update the item's state,
 /// and *in careful sequence*.
-pub trait Storage {
+pub trait Storage: Sync {
     /// Atomically occupies an item.
     ///
     /// # Error

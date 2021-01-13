@@ -17,5 +17,5 @@ pub trait ReservableItem {
 pub enum State {
     Available,
     Occupied,
-    Expired,
+    Expired
 }

@@ -12,6 +12,7 @@ use crate::domain::storage::reservation::{Storage, StorageV1, CreativeStorage};
 use crate::domain::storage::{items, users};
 use crate::domain::{ItemToken, ReservationId, UserId, UserToken, LOCK_POISONED, USER_NOT_FOUND};
 use std::ops::Add;
+use std::intrinsics::unlikely;
 
 /// Reserve-Tickets Session.
 pub trait Session {
@@ -162,11 +163,15 @@ impl<'a, 'b, 'c> SessionV1<'a, 'b, 'c> {
 
         let pos = pending_reservations
             .iter()
-            .position(|r| r.reservation.user_id() == tok.0)?;
+            .position(|r| r.reservation.id() == tok.1)?;
 
         pending_reservations.swap(pos, pending_reservations.len() - 1);
 
         let ret = Reservation::from(pending_reservations.pop().unwrap());
+        if unsafe { unlikely(ret.user_id() != tok.0) } {
+            return Err("")
+        }
+
         unimplemented!()
     }
 

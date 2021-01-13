@@ -9,7 +9,9 @@ use anyhow::{anyhow, Error, Result};
 use dashmap::mapref::one::{Ref, RefMut};
 use dashmap::DashMap;
 
-use crate::domain::storage::data::reservation::{Reservation, ReservationFactory};
+use crate::domain::storage::data::reservation::{
+    Reservation, ReservationFactory, ReservationFactoryV1,
+};
 use crate::domain::{
     make_user_token, ItemToken, ReservationId, UserId, UserToken, RSV_CONFLICT, USER_NOT_FOUND,
 };
@@ -19,7 +21,7 @@ use crate::domain::{
 /// Different from other storages, such as `UserStorage`, which might be singletons, there may be
 /// multiple instances of reservation storages present. For example, we may need temporary storage
 /// for active reservations which are not confirmed.
-pub trait Storage {
+pub trait Storage: Sync {
     fn store(&self, r: Reservation);
 
     /// Add the item to the reservation list, does not check if the item exists (it can't anyway).
@@ -44,40 +46,38 @@ pub trait Storage {
     fn authenticated_extract(&self, tok: UserToken) -> Result<Reservation>;
 }
 
-/// In-memory reservation storage for storing active reservations, i.e. those that are being made
-/// by the user.
-///
-///
-/// TODO: Kill the todo in User Storage. By the principle of Information Expert, I should make the
-///       reservation storage responsible for creating reservations, so the session need not know
-///       the existence of the factory.
-///         A storage such as this creates new reservations. The session then move the reservation
-///       to other storages or the void. This is far more ideal.
-///
-/// See [../sessions/reserve_tickets.html] for more.
-///
-/// # Lifetime
-/// This storage
-pub struct ActiveReservations<'f> {
+/// Provide both creating & storing abilities.
+pub trait CreativeStorage : Storage {
+    fn new_reservation(&self, user_id: UserId) -> ReservationId;
+}
+
+pub struct StorageV1<'f> {
     // Initially, I used a `RwLock<HashMap<...>>` to implement this. Later, I found this nice
     // lib called `DashMap` which is exactly what I needed.
     reservations: DashMap<ReservationId, Reservation>,
-    factory: &'f ReservationFactory,
+    factory: &'f ReservationFactoryV1,
 }
 
-impl<'f> ActiveReservations<'f> {
+
+impl<'f> CreativeStorage for StorageV1<'f> {
     /// Create a new reservation for the user. Does not check if the user id is valid.
-    pub fn new_reservation(&self, user_id: UserId) -> ReservationId {
+    ///
+    /// # Panic
+    /// if the id of the created reservation conflicts with any one else in the storage.
+    fn new_reservation(&self, user_id: UserId) -> ReservationId {
         let reservation = self.factory.with_user_id(user_id);
+
         let id = reservation.id();
         if unsafe { unlikely(self.reservations.insert(id, reservation).is_none()) } {
             panic!(RSV_CONFLICT);
         }
+
         id
     }
 }
 
-impl<'f> Storage for ActiveReservations<'f> {
+
+impl<'f> Storage for StorageV1<'f> {
     fn store(&self, r: Reservation) {
         assert!(self.reservations.insert(r.id(), r).is_none(), RSV_CONFLICT);
     }
@@ -124,7 +124,7 @@ impl<'f> Storage for ActiveReservations<'f> {
 /// It was not until then that I started to suspect on the DRY principle. DRY does not come with
 /// no cost. When we say "we should be DRY" we mean that the cost of staying DRY is worth it. When
 /// the premise is no longer held, we have no incentive any more to keep the code DRY.
-impl<'f> ActiveReservations<'f> {
+impl<'f> StorageV1<'f> {
     // rsv == reservation
     fn checked_rsv_mut(&self, tok: UserToken) -> Result<RefMut<ReservationId, Reservation>> {
         let reservation = self
