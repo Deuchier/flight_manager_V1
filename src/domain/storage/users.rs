@@ -1,6 +1,6 @@
 use crate::domain::storage::data::reservation::{Reservation, ReservationFactory};
 use crate::domain::storage::data::user::User;
-use crate::domain::{ReservationId, UserId};
+use crate::domain::{ReservationId, UserId, RSV_CONFLICT, USER_NOT_FOUND};
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -53,7 +53,7 @@ impl Storage for StorageV1 {
 
     fn start_reservation(&self, user_id: UserId) -> Result<ReservationId> {
         if !self.user_exists(&user_id) {
-            return Err(anyhow!("User not found"));
+            return Err(USER_NOT_FOUND);
         }
 
         let new = self.factory.with_user_id(user_id);
@@ -64,7 +64,7 @@ impl Storage for StorageV1 {
             .get_mut(new.user_id())
             .expect("I should've checked that the user is in the list??")
             .link(id)
-            .expect("Error: Reservation Id conflict");
+            .expect(RSV_CONFLICT.to_string().as_str());
 
         assert!(
             self.reservations

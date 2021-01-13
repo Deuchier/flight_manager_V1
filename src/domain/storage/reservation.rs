@@ -1,16 +1,18 @@
 use std::borrow::{Borrow, BorrowMut};
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
+use std::intrinsics::unlikely;
 use std::ops::{Deref, DerefMut};
 use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 use anyhow::{anyhow, Error, Result};
+use dashmap::mapref::one::{Ref, RefMut};
 use dashmap::DashMap;
-use dashmap::mapref::one::{RefMut, Ref};
 
-use crate::domain::{ItemToken, ReservationId, UserId, UserToken, make_user_token};
 use crate::domain::storage::data::reservation::{Reservation, ReservationFactory};
-use std::process::Termination;
+use crate::domain::{
+    make_user_token, ItemToken, ReservationId, UserId, UserToken, RSV_CONFLICT, USER_NOT_FOUND,
+};
 
 /// Reservation Storage.
 ///
@@ -20,7 +22,11 @@ use std::process::Termination;
 pub trait Storage {
     fn store(&self, r: Reservation);
 
-    /// Add the item to the reservation list, if it belongs to the user. Returns error otherwise.
+    /// Add the item to the reservation list, does not check if the item exists (it can't anyway).
+    ///
+    /// # Error
+    /// - if user id not conformant
+    /// - if reservation not found.
     fn authenticated_add(&self, tok: ItemToken) -> Result<()>;
 
     fn authenticated_remove(&self, tok: ItemToken) -> Result<()>;
@@ -28,8 +34,14 @@ pub trait Storage {
     /// Generate a summary of the reservation.
     ///
     /// # Error
-    /// if the user id is not conformant with the reservation.
+    /// similar.
     fn authenticated_summary(&self, tok: UserToken) -> Result<String>;
+
+    /// Extract a reservation from the storage.
+    ///
+    /// # Error
+    /// similar.
+    fn authenticated_extract(&self, tok: UserToken) -> Result<Reservation>;
 }
 
 /// In-memory reservation storage for storing active reservations, i.e. those that are being made
@@ -53,24 +65,21 @@ pub struct ActiveReservations<'f> {
     factory: &'f ReservationFactory,
 }
 
-const CONFLICT: &str = "Reservation Id conflicted";
-
 impl<'f> ActiveReservations<'f> {
     /// Create a new reservation for the user. Does not check if the user id is valid.
     pub fn new_reservation(&self, user_id: UserId) -> ReservationId {
         let reservation = self.factory.with_user_id(user_id);
         let id = reservation.id();
-        assert!(
-            self.reservations.insert(id, reservation).is_none(),
-            CONFLICT
-        );
+        if unsafe { unlikely(self.reservations.insert(id, reservation).is_none()) } {
+            panic!(RSV_CONFLICT);
+        }
         id
     }
 }
 
 impl<'f> Storage for ActiveReservations<'f> {
     fn store(&self, r: Reservation) {
-        assert!(self.reservations.insert(r.id(), r).is_none(), CONFLICT);
+        assert!(self.reservations.insert(r.id(), r).is_none(), RSV_CONFLICT);
     }
 
     fn authenticated_add(&self, tok: ItemToken) -> Result<()> {
@@ -87,8 +96,20 @@ impl<'f> Storage for ActiveReservations<'f> {
         let reservation = self.checked_rsv(tok)?;
         Ok(reservation.summary())
     }
-}
 
+    fn authenticated_extract(&self, tok: UserToken) -> Result<Reservation> {
+        let (_, reservation) = self.reservations.remove(tok.1)?;
+
+        if unsafe { unlikely(reservation.user_id() != tok.0) } {
+            self.reservations
+                .insert(tok.1.clone(), reservation)
+                .expect("SEVERE! Reservation data lost due to internal error of DashMap");
+            return Err(USER_NOT_FOUND);
+        }
+
+        Ok(reservation)
+    }
+}
 
 /// How DRY should we be?
 ///
@@ -106,20 +127,24 @@ impl<'f> Storage for ActiveReservations<'f> {
 impl<'f> ActiveReservations<'f> {
     // rsv == reservation
     fn checked_rsv_mut(&self, tok: UserToken) -> Result<RefMut<ReservationId, Reservation>> {
-        let reservation =
-            self.reservations.get_mut(tok.1).ok_or(anyhow!("Reservation not found"))?;
+        let reservation = self
+            .reservations
+            .get_mut(tok.1)
+            .ok_or(anyhow!("Reservation not found"))?;
         if reservation.user_id() != tok.0 {
-            Err(anyhow!("User id not conformant with the reservation"))
+            Err(USER_NOT_FOUND)
         } else {
             Ok(reservation)
         }
     }
 
     fn checked_rsv(&self, tok: UserToken) -> Result<Ref<ReservationId, Reservation>> {
-        let reservation =
-            self.reservations.get(tok.1).ok_or(anyhow!("Reservation not found"))?;
+        let reservation = self
+            .reservations
+            .get(tok.1)
+            .ok_or(anyhow!("Reservation not found"))?;
         if reservation.user_id() != tok.0 {
-            Err(anyhow!("User id not conformant with the reservation"))
+            Err(USER_NOT_FOUND)
         } else {
             Ok(reservation)
         }

@@ -38,7 +38,7 @@ end
 
 U <- S : summary for confirmation
 alt
-    U -> S : decline(rid)
+    U -> S : abort(rid)
     U <-- S : reservation aborted
 else
     U -> S : confirm(rid)
@@ -49,8 +49,8 @@ else
         U -> S : confirm
         U <-- S : payment successful
     else
-        U -> S : decline(rid)
-        U <-- S : reservation aborted
+        U -> S : cancel
+        U <-- S : Payment aborted
     else
         U <-- S : Error: Payment timeout\n\treservation aborted
      end

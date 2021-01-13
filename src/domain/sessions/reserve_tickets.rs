@@ -6,11 +6,12 @@ use std::time::{Duration, Instant};
 use anyhow::{anyhow, Context, Error, Result};
 use dashmap::DashMap;
 
-use crate::domain::{ItemToken, ReservationId, UserId, UserToken};
-use crate::domain::storage::{items, users};
 use crate::domain::storage::data::reservation::{Reservation, ReservationFactory};
 use crate::domain::storage::data::user::User;
 use crate::domain::storage::reservation::{ActiveReservations, Storage};
+use crate::domain::storage::{items, users};
+use crate::domain::{ItemToken, ReservationId, UserId, UserToken, USER_NOT_FOUND, LOCK_POISONED};
+use std::ops::Add;
 
 /// Reserve-Tickets Session.
 pub trait Session {
@@ -67,6 +68,8 @@ pub trait Session {
     /// Calling this function will terminate the modifying process of the reservation (i.e. `add` or
     /// `remove`). Any subsequent calls to those functions or this one will result in an error.
     ///
+    /// # Error
+    /// if the reservation is not active.
     fn confirm(&self, token: UserToken) -> Result<()>;
 
     /// Aborts a reservation that's not paid yet.
@@ -99,11 +102,7 @@ pub trait Session {
 /// - ('b) the User Storage;
 /// - ('c) the Item Storage.
 pub struct SessionV1<'a, 'b, 'c> {
-    // Might not be too many temps, so a Vec will do.
-    // Confirmed reservations waiting to be paid.
-    // We need only one modification to them when they are popped from the Vec, so no need to
-    // add locks.
-    pending_reservations: Vec<TempReservation>,
+    pending_reservations: RwLock<Vec<TempReservation>>,
     active_reservations: ActiveReservations<'a>,
     users: &'b dyn users::Storage,
     items: &'c dyn items::Storage,
@@ -112,7 +111,7 @@ pub struct SessionV1<'a, 'b, 'c> {
 impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
     fn start_reservation(&self, user_id: UserId) -> Result<ReservationId> {
         if !self.users.user_exists(&user_id) {
-            return Err(anyhow!("User not found"));
+            return Err(USER_NOT_FOUND);
         }
 
         Ok(self.active_reservations.new_reservation(user_id))
@@ -122,7 +121,8 @@ impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
         // Occupy the item first in case it is preempted by others.
         self.items.occupy(token.2)?;
 
-        self.active_reservations.authenticated_add(token)
+        self.active_reservations
+            .authenticated_add(token)
             .or_else(|e| {
                 self.items.release(token.2);
                 Err(e)
@@ -139,7 +139,9 @@ impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
     }
 
     fn confirm(&self, token: UserToken) -> Result<()> {
-        unimplemented!()
+        let reservation = self.active_reservations.authenticated_extract(token)?;
+        let mut guard = self.pending_reservations.write().unwrap();
+        Ok(guard.push(TempReservation::with_wait_time(reservation, TMP_RSV_TIMEOUT)))
     }
 
     fn abort(&self, token: UserToken) -> Result<()> {
@@ -151,12 +153,23 @@ impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
     }
 }
 
+// TODO: Implement wait-up mechanisms
 struct TempReservation {
     deadline: Instant,
-    inner: Reservation,
+    reservation: Reservation,
+}
+
+impl TempReservation {
+    /// Create a clock-counted reservation pack with the designated duration.
+    fn with_wait_time(reservation: Reservation, wait_for: Duration) -> Self {
+        Self {
+            deadline: Instant::now().add(wait_for),
+            reservation
+        }
+    }
 }
 
 /// Timeout for a new reservation.
 ///
 /// This is the max elapse from when a reservation has been confirmed to when it is paid.
-const TEMP_RESERVATION_TIMEOUT: Duration = Duration::from_secs(5 * 60);
+const TMP_RSV_TIMEOUT: Duration = Duration::from_secs(5 * 60);

@@ -17,6 +17,10 @@ pub type ReservableItemId = String; // Is a String for it may be defined by exte
 pub type UserToken<'a> = (&'a UserId, &'a ReservationId);
 pub type ItemToken<'a> = (&'a UserId, &'a ReservationId, &'a ReservableItemId);
 
+/// Const Errors
+const RSV_CONFLICT: anyhow::Error = anyhow!("Reservation Id conflicted");
+const USER_NOT_FOUND: anyhow::Error = anyhow!("User not found");
+
 fn make_user_token<'a>(tok: &'a ItemToken) -> UserToken<'a> {
     (tok.0, tok.1)
 }

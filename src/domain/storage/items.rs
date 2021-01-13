@@ -55,7 +55,13 @@ impl Storage for SimpleStorage {
 }
 
 impl SimpleStorage {
-    fn state_mut(&self, item_id: &ReservableItemId) -> Result<(&mut item::State, RefMut<ReservableItemId, Box<dyn ReservableItem>>)> {
+    fn state_mut(
+        &self,
+        item_id: &ReservableItemId,
+    ) -> Result<(
+        &mut item::State,
+        RefMut<ReservableItemId, Box<dyn ReservableItem>>,
+    )> {
         let mut guard = self
             .items
             .get_mut(item_id)

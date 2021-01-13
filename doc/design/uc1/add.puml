@@ -12,7 +12,7 @@ participant "r:Reservation" as R
     S -> IS + : occupy(item_id)
     S <-- IS - : Ok
     S -> AR + : authenticated_add(u_id, r_id, item_id)
-        AR -> R + : expect user_id == u_id
+        AR -> R + : expect u_id == user_id()
         AR -> R : add(item_id)
         AR <-- R - : Ok
     S <-- AR - : Ok
