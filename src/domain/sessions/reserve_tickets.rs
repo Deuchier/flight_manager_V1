@@ -51,13 +51,16 @@ pub trait Session {
     /// # Return
     /// a serialized form of the reservation.
     ///
+    /// # Error
+    /// if the user id is not conformant.
+    ///
     /// > <del>
     /// > AFA (Jun. 11 '20), I'm using the YAML form instead of the more famous JSON, since
     /// > YAML is more concise and readable than JSON.
     /// > </del>
     /// >
     /// > I've switched back to JSON since it has the best library support.
-    fn summary(&self, token: ItemToken) -> Result<String>;
+    fn summary(&self, token: UserToken) -> Result<String>;
 
     /// Confirms an reservation.
     ///
@@ -127,8 +130,8 @@ impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
         Ok(self.items.release(token.2)) // Ok for the tuple is `Copy`
     }
 
-    fn summary(&self, token: ItemToken) -> Result<String> {
-        unimplemented!()
+    fn summary(&self, token: UserToken) -> Result<String> {
+        self.active_reservations.authenticated_summary(token)
     }
 
     fn confirm(&self, token: UserToken) -> Result<()> {

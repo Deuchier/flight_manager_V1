@@ -1,0 +1,18 @@
+@startuml
+
+hide footbox
+autonumber "<b>##."
+
+participant "s:Session" as S
+participant "ar:ActiveReservationStorage" as AR
+participant "r:Reservation" as R
+
+[-> S + : summary(u_id, r_id)
+    S -> AR + : authenticated_summary(u_id, r_id)
+        AR -> R + : expect u_id == user_id()
+        AR -> R : s = summary()
+        deactivate R
+    S <-- AR - : s
+[<-- S - : s
+
+@enduml

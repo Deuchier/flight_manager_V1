@@ -41,6 +41,13 @@ impl Reservation {
             .remove(item)
             .ok_or(anyhow!("Item not in the list"))
     }
+
+    /// Generate a summary of the reservation.
+    ///
+    /// No error. Why would the function ever go wrong?
+    pub fn summary(&self) -> String {
+        serde_json::to_string(self).expect("Error when serializing the reservation")
+    }
 }
 
 /// Singleton factory building reservations. It stores an internal state of the next id, which will
