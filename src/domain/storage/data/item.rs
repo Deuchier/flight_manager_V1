@@ -1,21 +1,25 @@
 use crate::domain::ReservableItemId;
+use anyhow::Result;
 
 /// Reservable Item. Examples of such items are passenger tickets, pick-up tickets, luggage-checking
 /// tickets etc.
-///
-/// Such items are not `Send` nor `Sync`.
 #[typetag::serde]
-pub trait ReservableItem {
+pub trait ReservableItem: Sync + Send {
     fn id(&self) -> ReservableItemId;
 
-    fn state(&self) -> State;
+    /// True if the item was available.
+    fn occupy(&self) -> bool;
 
-    fn state_mut(&mut self) -> &mut State;
+    /// # Error
+    /// if trying to release an available item.
+    ///
+    /// It's dangerous since potential misbehavior might've occurred.
+    fn release(&self) -> Result<()>;
 }
 
 /// Reservable-Item State.
 pub enum State {
     Available,
     Occupied,
-    Expired
+    Expired,
 }

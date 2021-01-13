@@ -4,23 +4,25 @@
 //! domain model.
 //!
 //! This file also contains some type definitions (shorthands) used commonly by the sub-modules.
+mod payment;
 pub mod sessions;
 mod storage;
-mod payment;
+
+use anyhow::anyhow;
+use serde::{Deserialize, Serialize};
 
 pub type UserId = String; // UserId is the internal id of a user. They can also have nicknames.
 pub type ReservationId = u64; // This id must be `Copy`.
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize, Hash, Eq, PartialEq)]
 pub struct ReservableItemId {
     flight_id: String,
     internal_id: String,
 }
 
 impl ReservableItemId {
-    pub fn id() {} //todo
+    // todo
 }
-
 
 /// Helper types for simplifying the signature of the sessions.
 ///
@@ -28,10 +30,6 @@ impl ReservableItemId {
 pub type UserToken<'a> = (&'a UserId, &'a ReservationId);
 pub type ItemToken<'a> = (&'a UserId, &'a ReservationId, &'a ReservableItemId);
 
-/// Const Errors
-const RSV_CONFLICT: anyhow::Error = anyhow!("Reservation Id conflicted");
-const USER_NOT_FOUND: anyhow::Error = anyhow!("User not found");
-const USER_NOT_CONFORMANT: anyhow::Error = anyhow!("User id not conformant with the reservation");
 
 fn make_user_token<'a>(tok: &'a ItemToken) -> UserToken<'a> {
     (tok.0, tok.1)

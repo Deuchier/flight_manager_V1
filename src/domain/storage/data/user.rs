@@ -1,8 +1,8 @@
-use crate::domain::{ReservationId, UserId, RSV_CONFLICT};
-use anyhow::Result;
+use crate::domain::{ReservationId, UserId};
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashSet;
+use crate::foundation::errors::rsv_conflict;
 
 #[derive(Serialize, Deserialize)]
 pub struct User {
@@ -18,7 +18,7 @@ impl User {
     /// may be potential reservation-id conflicts.
     pub fn link(&mut self, id: ReservationId) {
         if !self.reservations.insert(id) {
-            panic!(RSV_CONFLICT);
+            panic!(rsv_conflict());
         }
     }
 }

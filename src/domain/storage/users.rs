@@ -1,11 +1,12 @@
 use crate::domain::storage::data::reservation::{Reservation, ReservationFactoryV1};
 use crate::domain::storage::data::user::User;
-use crate::domain::{ReservationId, UserId, RSV_CONFLICT, USER_NOT_FOUND};
+use crate::domain::{ReservationId, UserId, };
 use anyhow::{anyhow, Result};
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::RwLock;
+use crate::foundation::errors::user_not_found;
 
 /// User Storage
 ///
@@ -44,7 +45,7 @@ impl Storage for StorageV1 {
     fn add_reservation(&self, r: Reservation) {
         self.users
             .get_mut(r.user_id())
-            .expect(&USER_NOT_FOUND.to_string())
+            .expect(&user_not_found().to_string())
             .link(r.id());
 
         self.reservations.insert(r.id(), r);

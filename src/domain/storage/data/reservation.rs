@@ -1,4 +1,3 @@
-use crate::domain::storage::data::user::User;
 use crate::domain::{ReservableItemId, ReservationId, UserId};
 use anyhow::{anyhow, Result};
 use boolinator::Boolinator;

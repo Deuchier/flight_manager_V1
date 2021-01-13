@@ -1,6 +1,5 @@
 use crate::domain::ReservationId;
 use anyhow::Result;
-use serde::Deserialize;
 use std::io::Read;
 
 /// Get the program statistics.

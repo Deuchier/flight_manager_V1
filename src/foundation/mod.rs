@@ -2,3 +2,4 @@
 
 pub mod file_writer;
 pub mod init;
+pub mod errors;

@@ -6,17 +6,22 @@ use std::time::{Duration, Instant};
 use anyhow::{anyhow, Context, Error, Result};
 use dashmap::DashMap;
 
+use crate::domain::payment::Payment;
 use crate::domain::storage::data::reservation::{Reservation, ReservationFactoryV1};
 use crate::domain::storage::data::user::User;
-use crate::domain::storage::reservation::{Storage, StorageV1, CreativeStorage};
+use crate::domain::storage::reservation::{CreativeStorage, Storage, StorageV1};
 use crate::domain::storage::{items, users};
-use crate::domain::{ItemToken, ReservationId, UserId, UserToken, LOCK_POISONED, USER_NOT_FOUND, USER_NOT_CONFORMANT};
+use crate::domain::{
+    ItemToken, ReservationId, UserId, UserToken,
+};
 use std::ops::Add;
-use std::intrinsics::unlikely;
-use crate::domain::payment::Payment;
+use crate::foundation::errors::{user_not_found, user_not_conformant};
 
 /// Reserve-Tickets Session.
-pub trait Session {
+///
+/// # Sync
+/// Multiple threads can access the same session without contention.
+pub trait Session: Sync {
     /// Start a new reservation for the user. Returns a unique id for identifying the reservation.
     ///
     /// # Temporary Reservation
@@ -108,7 +113,7 @@ pub struct SessionV1<'a, 'b, 'c> {
 impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
     fn start_reservation(&self, user_id: UserId) -> Result<ReservationId> {
         if !self.users.user_exists(&user_id) {
-            return Err(USER_NOT_FOUND);
+            return Err(user_not_found());
         }
 
         Ok(self.active_reservations.new_reservation(user_id))
@@ -128,7 +133,7 @@ impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
 
     fn remove_item(&self, token: ItemToken) -> Result<()> {
         self.active_reservations.authenticated_remove_item(token)?;
-        Ok(self.items.release(token.2)) // Ok for the tuple is `Copy`
+        self.items.release(token.2)
     }
 
     fn summary(&self, token: UserToken) -> Result<String> {
@@ -163,17 +168,19 @@ impl<'a, 'b, 'c> SessionV1<'a, 'b, 'c> {
     /// - if user not found
     /// - if user not conformant with the reservation
     fn authenticated_extract_tmp(&self, token: UserToken) -> Result<Reservation> {
-        let mut pending_reservations = self.pending_reservations.write().unwrap();
+        let mut reservations = self.pending_reservations.write().unwrap();
 
-        let pos = pending_reservations
+        let last = reservations.len() - 1;
+        let pos = reservations
             .iter()
-            .position(|r| r.reservation.id() == token.1).ok_or(USER_NOT_FOUND)?;
+            .position(|r| r.reservation.id() == *token.1)
+            .ok_or(user_not_found())?;
 
-        pending_reservations.swap(pos, pending_reservations.len() - 1);
+        reservations.swap(pos, last);
 
-        let ret = Reservation::from(pending_reservations.pop().unwrap());
-        if unsafe { unlikely(ret.user_id() != token.0) } {
-            return Err(USER_NOT_CONFORMANT);
+        let ret = Reservation::from(reservations.pop().unwrap());
+        if ret.user_id() != token.0 {
+            return Err(user_not_conformant());
         }
 
         Ok(ret)

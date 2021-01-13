@@ -1,7 +1,6 @@
 use std::borrow::{Borrow, BorrowMut};
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
-use std::intrinsics::unlikely;
 use std::ops::{Deref, DerefMut};
 use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
@@ -12,7 +11,10 @@ use dashmap::DashMap;
 use crate::domain::storage::data::reservation::{
     Reservation, ReservationFactory, ReservationFactoryV1,
 };
-use crate::domain::{make_user_token, ItemToken, ReservationId, UserId, UserToken, RSV_CONFLICT, USER_NOT_FOUND, USER_NOT_CONFORMANT};
+use crate::domain::{
+    make_user_token, ItemToken, ReservationId, UserId, UserToken
+};
+use crate::foundation::errors::{rsv_conflict, rsv_not_found, user_not_conformant};
 
 /// Reservation Storage.
 ///
@@ -45,7 +47,7 @@ pub trait Storage: Sync {
 }
 
 /// Provide both creating & storing abilities.
-pub trait CreativeStorage : Storage {
+pub trait CreativeStorage: Storage {
     fn new_reservation(&self, user_id: UserId) -> ReservationId;
 }
 
@@ -56,7 +58,6 @@ pub struct StorageV1<'f> {
     factory: &'f ReservationFactoryV1,
 }
 
-
 impl<'f> CreativeStorage for StorageV1<'f> {
     /// Create a new reservation for the user. Does not check if the user id is valid.
     ///
@@ -66,18 +67,17 @@ impl<'f> CreativeStorage for StorageV1<'f> {
         let reservation = self.factory.with_user_id(user_id);
 
         let id = reservation.id();
-        if unsafe { unlikely(self.reservations.insert(id, reservation).is_none()) } {
-            panic!(RSV_CONFLICT);
+        if self.reservations.insert(id, reservation).is_none() {
+            panic!(rsv_conflict());
         }
 
         id
     }
 }
 
-
 impl<'f> Storage for StorageV1<'f> {
     fn store(&self, r: Reservation) {
-        assert!(self.reservations.insert(r.id(), r).is_none(), RSV_CONFLICT);
+        assert!(self.reservations.insert(r.id(), r).is_none(), rsv_conflict());
     }
 
     fn authenticated_add_item(&self, tok: ItemToken) -> Result<()> {
@@ -96,13 +96,13 @@ impl<'f> Storage for StorageV1<'f> {
     }
 
     fn authenticated_extract(&self, tok: UserToken) -> Result<Reservation> {
-        let (_, reservation) = self.reservations.remove(tok.1)?;
+        let (_, reservation) = self.reservations.remove(tok.1).ok_or(rsv_not_found())?;
 
-        if unsafe { unlikely(reservation.user_id() != tok.0) } {
+        if reservation.user_id() != tok.0 {
             self.reservations
                 .insert(tok.1.clone(), reservation)
                 .expect("SEVERE! Reservation data lost due to internal error of DashMap");
-            return Err(USER_NOT_CONFORMANT);
+            return Err(user_not_conformant());
         }
 
         Ok(reservation)
@@ -130,7 +130,7 @@ impl<'f> StorageV1<'f> {
             .get_mut(tok.1)
             .ok_or(anyhow!("Reservation not found"))?;
         if reservation.user_id() != tok.0 {
-            Err(USER_NOT_CONFORMANT)
+            Err(user_not_conformant())
         } else {
             Ok(reservation)
         }
@@ -142,7 +142,7 @@ impl<'f> StorageV1<'f> {
             .get(tok.1)
             .ok_or(anyhow!("Reservation not found"))?;
         if reservation.user_id() != tok.0 {
-            Err(USER_NOT_CONFORMANT)
+            Err(user_not_conformant())
         } else {
             Ok(reservation)
         }
