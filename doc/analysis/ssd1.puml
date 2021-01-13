@@ -9,13 +9,13 @@ participant "s:System" as S
 activate U
 U -> S +: start_reservation
 alt
-    U <-- S : blank reservation session started,\nrid: ReservationId
+    U <-- S : blank reservation session started,\nr_id: ReservationId
 else
     U <-- S : Error: User not found.
 end
 loop [more_actions]
     alt
-        U -> S : add(rid, item_id: ReservableItemId)
+        U -> S : add(r_id, item_id: ReservableItemId)
         alt
             U <-- S : Ok: Item available.\n\titem marked as occupied,\n\tadded to the list
         else
@@ -24,27 +24,27 @@ loop [more_actions]
             U <-- S : Error: Item not found
         end
     else
-        U -> S : remove(rid, item_id)
+        U -> S : remove(r_id, item_id)
         alt
             U <-- S : Ok: Item in the list.\n\tItem removed from the list
         else
             U <-- S : Error: Item not in reservation list
         end
     else
-        U -> S : summary(rid)
+        U -> S : summary(r_id)
         U <-- S : s: String (serialized form of the reservation)
     end
 end
 
 U <- S : summary for confirmation
 alt
-    U -> S : abort(rid)
+    U -> S : abort(r_id)
     U <-- S : reservation aborted
 else
-    U -> S : confirm(rid)
+    U -> S : confirm(r_id)
     U <-- S : reservation stored
     alt
-        U -> S : pay_by_cash(rid)
+        U -> S : pay_by(r_id, method: Payment)
         U <-- S : payment page
         U -> S : confirm
         U <-- S : payment successful

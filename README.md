@@ -82,3 +82,13 @@ Error.
 In implementations, almost every system call accepts a `token`, which is simply a parameter pack. The name might be
 confusing with the term used in lexical analysis, but I've not changed it yet.
 
+### State vs No State
+
+If we assign some states to the data, such as "Making, WaitingForPayment, Ready, Done, Expired" for reservations, we can
+store them in one storage and make the storage handle the transitions of states.
+
+Another method is to erase the states, but store the information by storing the reservations in different storages. This
+makes the calling logics more complicated, but the reservation itself no longer needs to record its state.
+
+There has been long-term debates as to whether we should have states and what states we should have. I don't think there
+are any silver bullets, and only experience will tell me which to choose.
