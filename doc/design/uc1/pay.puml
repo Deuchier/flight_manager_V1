@@ -13,7 +13,7 @@ participant "r:Reservation" as R
     S -> PR + : authenticated_extract(u_id, r_id)\n// See SD "confirm"
     S <-- PR - : r: Reservation
 
-    S -> P + : pay(r_id, &p)
+    S -> P + : pay(&r)
         opt ["details up to implementation"]
             P --> R : do something
         end

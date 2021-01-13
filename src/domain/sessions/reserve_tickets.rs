@@ -13,6 +13,7 @@ use crate::domain::storage::{items, users};
 use crate::domain::{ItemToken, ReservationId, UserId, UserToken, LOCK_POISONED, USER_NOT_FOUND, USER_NOT_CONFORMANT};
 use std::ops::Add;
 use std::intrinsics::unlikely;
+use crate::domain::payment::Payment;
 
 /// Reserve-Tickets Session.
 pub trait Session {
@@ -94,7 +95,7 @@ pub trait Session {
     /// # Persistent Storage
     /// On success, the function will store the reservation into the user's profile. It is not until
     /// this function is called that a reservation will finally be stored in the user's profile.
-    fn pay(&self, token: UserToken) -> Result<()>;
+    fn pay(&self, token: UserToken, p: Box<dyn Payment>) -> Result<()>;
 }
 
 pub struct SessionV1<'a, 'b, 'c> {
@@ -144,13 +145,15 @@ impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
     }
 
     fn abort(&self, token: UserToken) -> Result<()> {
-        self.active_reservations.authenticated_extract(token)?;
+        self.active_reservations.authenticated_extract(token)?; // drop
         Ok(())
     }
 
-    fn pay(&self, token: UserToken) -> Result<()> {
-        // todo
-        unimplemented!()
+    fn pay(&self, token: UserToken, p: Box<dyn Payment>) -> Result<()> {
+        let reservation = self.authenticated_extract_tmp(token)?;
+        p.pay(&reservation)?;
+        self.users.add_reservation(reservation);
+        Ok(())
     }
 }
 
@@ -164,7 +167,7 @@ impl<'a, 'b, 'c> SessionV1<'a, 'b, 'c> {
 
         let pos = pending_reservations
             .iter()
-            .position(|r| r.reservation.id() == token.1)?;
+            .position(|r| r.reservation.id() == token.1).ok_or(USER_NOT_FOUND)?;
 
         pending_reservations.swap(pos, pending_reservations.len() - 1);
 

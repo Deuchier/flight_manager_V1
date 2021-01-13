@@ -6,6 +6,7 @@
 //! This file also contains some type definitions (shorthands) used commonly by the sub-modules.
 pub mod sessions;
 mod storage;
+mod payment;
 
 pub type UserId = String; // UserId is the internal id of a user. They can also have nicknames.
 pub type ReservationId = u64; // This id must be `Copy`.

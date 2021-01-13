@@ -24,6 +24,9 @@ pub trait Storage: Sync {
     ///
     /// # Panic
     /// if the user is not in the storage.
+    ///
+    /// When we decide to call this function, it means that we already have a reservation linked
+    /// with a certain user in the storage, so, it is unlikely that the user could not be found.
     fn add_reservation(&self, r: Reservation);
 }
 
