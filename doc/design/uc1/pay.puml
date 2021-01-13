@@ -1,0 +1,27 @@
+@startuml
+
+hide footbox
+autonumber "<b>##."
+
+participant "s:Session" as S
+participant "pr:PendingReservations" as PR
+participant "p:Payment" as P <<Interface>>
+participant "us:UserStorage" as US
+participant "r:Reservation" as R
+
+[-> S + : pay(u_id, r_id, p: Payment)
+    S -> PR + : authenticated_extract(u_id, r_id)\n// See SD "confirm"
+    S <-- PR - : r: Reservation
+
+    S -> P + : pay(r_id, &p)
+        opt ["details up to implementation"]
+            P --> R : do something
+        end
+    S <-- P - : Ok
+
+    S -> US + : add_reservation(r)
+    S <-- US - : Ok
+[<-- S - : Ok
+
+
+@enduml

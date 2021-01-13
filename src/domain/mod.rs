@@ -20,6 +20,7 @@ pub type ItemToken<'a> = (&'a UserId, &'a ReservationId, &'a ReservableItemId);
 /// Const Errors
 const RSV_CONFLICT: anyhow::Error = anyhow!("Reservation Id conflicted");
 const USER_NOT_FOUND: anyhow::Error = anyhow!("User not found");
+const USER_NOT_CONFORMANT: anyhow::Error = anyhow!("User id not conformant with the reservation");
 
 fn make_user_token<'a>(tok: &'a ItemToken) -> UserToken<'a> {
     (tok.0, tok.1)

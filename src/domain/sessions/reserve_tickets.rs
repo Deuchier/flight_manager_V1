@@ -10,7 +10,7 @@ use crate::domain::storage::data::reservation::{Reservation, ReservationFactoryV
 use crate::domain::storage::data::user::User;
 use crate::domain::storage::reservation::{Storage, StorageV1, CreativeStorage};
 use crate::domain::storage::{items, users};
-use crate::domain::{ItemToken, ReservationId, UserId, UserToken, LOCK_POISONED, USER_NOT_FOUND};
+use crate::domain::{ItemToken, ReservationId, UserId, UserToken, LOCK_POISONED, USER_NOT_FOUND, USER_NOT_CONFORMANT};
 use std::ops::Add;
 use std::intrinsics::unlikely;
 
@@ -156,25 +156,25 @@ impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
 
 /// Helpers
 impl<'a, 'b, 'c> SessionV1<'a, 'b, 'c> {
-    /// # None
-    /// if user not found
-    fn authenticated_extract_tmp(&self, tok: UserToken) -> Option<Reservation> {
+    /// # Error
+    /// - if user not found
+    /// - if user not conformant with the reservation
+    fn authenticated_extract_tmp(&self, token: UserToken) -> Result<Reservation> {
         let mut pending_reservations = self.pending_reservations.write().unwrap();
 
         let pos = pending_reservations
             .iter()
-            .position(|r| r.reservation.id() == tok.1)?;
+            .position(|r| r.reservation.id() == token.1)?;
 
         pending_reservations.swap(pos, pending_reservations.len() - 1);
 
         let ret = Reservation::from(pending_reservations.pop().unwrap());
-        if unsafe { unlikely(ret.user_id() != tok.0) } {
-            return Err("")
+        if unsafe { unlikely(ret.user_id() != token.0) } {
+            return Err(USER_NOT_CONFORMANT);
         }
 
-        unimplemented!()
+        Ok(ret)
     }
-
 }
 
 // TODO: Implement wait-up mechanisms

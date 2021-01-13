@@ -12,9 +12,7 @@ use dashmap::DashMap;
 use crate::domain::storage::data::reservation::{
     Reservation, ReservationFactory, ReservationFactoryV1,
 };
-use crate::domain::{
-    make_user_token, ItemToken, ReservationId, UserId, UserToken, RSV_CONFLICT, USER_NOT_FOUND,
-};
+use crate::domain::{make_user_token, ItemToken, ReservationId, UserId, UserToken, RSV_CONFLICT, USER_NOT_FOUND, USER_NOT_CONFORMANT};
 
 /// Reservation Storage.
 ///
@@ -104,7 +102,7 @@ impl<'f> Storage for StorageV1<'f> {
             self.reservations
                 .insert(tok.1.clone(), reservation)
                 .expect("SEVERE! Reservation data lost due to internal error of DashMap");
-            return Err(USER_NOT_FOUND);
+            return Err(USER_NOT_CONFORMANT);
         }
 
         Ok(reservation)
@@ -132,7 +130,7 @@ impl<'f> StorageV1<'f> {
             .get_mut(tok.1)
             .ok_or(anyhow!("Reservation not found"))?;
         if reservation.user_id() != tok.0 {
-            Err(USER_NOT_FOUND)
+            Err(USER_NOT_CONFORMANT)
         } else {
             Ok(reservation)
         }
@@ -144,7 +142,7 @@ impl<'f> StorageV1<'f> {
             .get(tok.1)
             .ok_or(anyhow!("Reservation not found"))?;
         if reservation.user_id() != tok.0 {
-            Err(USER_NOT_FOUND)
+            Err(USER_NOT_CONFORMANT)
         } else {
             Ok(reservation)
         }
