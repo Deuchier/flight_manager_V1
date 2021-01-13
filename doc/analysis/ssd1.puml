@@ -35,14 +35,7 @@ loop [more_actions]
         U <-- S : s: String (serialized form of the reservation)
     end
 end
-note right
-    In implementation, the user will
-    send their ids every time they
-    issue a request. If the id is
-    inconsistent, the system will
-    also return an Error, which is
-    not shown here.
-end note
+
 U <- S : summary for confirmation
 alt
     U -> S : decline(rid)

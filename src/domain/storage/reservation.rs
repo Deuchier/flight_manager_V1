@@ -1,13 +1,16 @@
-use crate::domain::sessions::ItemToken;
-use crate::domain::storage::data::reservation::{Reservation, ReservationFactory};
-use crate::domain::{ReservationId, UserId};
-use anyhow::{anyhow, Result};
-use dashmap::mapref::one::RefMut;
-use dashmap::DashMap;
 use std::borrow::{Borrow, BorrowMut};
+use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
+
+use anyhow::{anyhow, Error, Result};
+use dashmap::DashMap;
+use dashmap::mapref::one::RefMut;
+
+use crate::domain::{ItemToken, ReservationId, UserId, UserToken, make_user_token};
+use crate::domain::storage::data::reservation::{Reservation, ReservationFactory};
+use std::process::Termination;
 
 /// Reservation Storage.
 ///
@@ -17,11 +20,10 @@ use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 pub trait Storage {
     fn store(&self, r: Reservation);
 
-    /// Asks for write handles on a reservation.
-    ///
-    /// # May Deadlock
-    /// if called when holding any other references into the storage.
-    fn write(&self, r_id: ReservationId) -> Option<RefMut<ReservationId, Reservation>>;
+    /// Add the item to the reservation list, if it belongs to the user. Returns error otherwise.
+    fn authenticated_add(&self, tok: ItemToken) -> Result<()>;
+
+    fn authenticated_remove(&self, tok: ItemToken) -> Result<()>;
 }
 
 /// In-memory reservation storage for storing active reservations, i.e. those that are being made
@@ -52,7 +54,10 @@ impl<'f> ActiveReservations<'f> {
     pub fn new_reservation(&self, user_id: UserId) -> ReservationId {
         let reservation = self.factory.with_user_id(user_id);
         let id = reservation.id();
-        assert!(self.reservations.insert(id, reservation).is_none(), CONFLICT);
+        assert!(
+            self.reservations.insert(id, reservation).is_none(),
+            CONFLICT
+        );
         id
     }
 }
@@ -62,7 +67,26 @@ impl<'f> Storage for ActiveReservations<'f> {
         assert!(self.reservations.insert(r.id(), r).is_none(), CONFLICT);
     }
 
-    fn write(&self, r_id: &ReservationId) -> Option<RefMut<ReservationId, Reservation>> {
-        self.reservations.get_mut(r_id)
+    fn authenticated_add(&self, tok: ItemToken) -> Result<()> {
+        let mut reservation = self.checked_rsv_mut(make_user_token(&tok));
+        Ok(reservation.add(tok.2))
+    }
+
+    fn authenticated_remove(&self, tok: ItemToken) -> Result<()> {
+        let mut reservation = self.checked_rsv_mut(make_user_token(&tok));
+        Ok(reservation.remove(tok.2))
+    }
+}
+
+impl<'f> ActiveReservations<'f> {
+    // rsv == reservation
+    fn checked_rsv_mut(&self, tok: UserToken) -> Result<RefMut<ReservationId, Reservation>> {
+        let reservation =
+            self.reservations.get_mut(tok.1).ok_or(anyhow!("Reservation not found"))?;
+        if reservation.user_id() != tok.0 {
+            Err(anyhow!("User id not conformant with the reservation"))
+        } else {
+            Ok(reservation)
+        }
     }
 }

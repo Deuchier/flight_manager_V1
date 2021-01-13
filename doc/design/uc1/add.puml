@@ -4,9 +4,9 @@ hide footbox
 autonumber "<b>##."
 
 participant "s:Session" as S
+participant "is:ItemStorage" as IS
 participant "ar:ActiveReservationStorage" as AR
 participant "r:Reservation" as R
-participant "is:ItemStorage" as IS
 
 [-> S + : add(u_id, r_id, item_id)
     S -> IS + : occupy(item_id)
@@ -14,23 +14,8 @@ participant "is:ItemStorage" as IS
     S -> AR + : authenticated_add(u_id, r_id, item_id)
         AR -> R + : expect user_id == u_id
         AR -> R : add(item_id)
-
-
-    S -> AR + : write(r_id)
-    S <-- AR - : r: Reservation
-    S -> R + : user_id()
-    S <-- R : user_id
-    S -> S : expect user_id == u_id
-    S -> R : add(item_id)
-alt
-    S <-- R : Ok: no duplicates
-[<-- S : Ok
-else
-    S <-- R - : Err: a duplicate found
-    S -> IS + : release(item_id)
-    S <-- IS - : Ok
-[<-- S - : Err
-end
-
+        AR <-- R - : Ok
+    S <-- AR - : Ok
+[<-- S - : Ok
 
 @enduml

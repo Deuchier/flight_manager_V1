@@ -32,8 +32,8 @@ Correspondingly, the core subsystems are:
 
 ### Glossary
 
-The [glossary](doc/analysis/glossary.md) records terms of the system. However, with the most detailed design documents in the source
-code, the glossary is of little use now. Turned out that it more acted as a memorandum.
+The [glossary](doc/analysis/glossary.md) records terms of the system. However, with the most detailed design documents
+in the source code, the glossary is of little use now. Turned out that it more acted as a memorandum.
 
 ### Use cases
 
@@ -57,6 +57,7 @@ Some steps do not have strict order. For these cases I may use unordered list (i
 ### System Sequence Graph (SSD)
 
 The SSDs are to record external events that the system will respond to. These are:
+
 1. Events from User.
 2. Time events, such as time limit exceeded for unpaid reservations.
 3. External errors and exceptions. Since in this lab no external cooperators exist, such events are impossible.
@@ -64,12 +65,6 @@ The SSDs are to record external events that the system will respond to. These ar
 We can see that system events are fewer than anticipated.
 
 ## Design
-
-### Data-Driven
-
-The specific format of data (such as the tickets) are very subject to change in the future. To reduce maintenance cost,
-I adopted a data-driven approach, only interacting with general types in the code, and implement specific object types
-in configuration files.
 
 ### No Databases
 
@@ -80,4 +75,10 @@ For such a demo project it is of little use. So I use only a simple serde method
 
 The DCDs and SDs might not contain exact method interfaces for classes. It is only used as a overview of the
 relationship among classes and packages. You should refer to the code document or the source for details.
+
+The user will send their ids every time they issue a request. If the id is inconsistent, the system will return an
+Error.
+
+In implementations, almost every system call accepts a `token`, which is simply a parameter pack. The name might be
+confusing with the term used in lexical analysis, but I've not changed it yet.
 

@@ -35,6 +35,12 @@ impl Reservation {
             .insert(item)
             .ok_or(anyhow!("Reservable Item Id conflicted"))
     }
+
+    pub fn remove(&mut self, item: &ReservableItemId) -> Result<()> {
+        self.items
+            .remove(item)
+            .ok_or(anyhow!("Item not in the list"))
+    }
 }
 
 /// Singleton factory building reservations. It stores an internal state of the next id, which will

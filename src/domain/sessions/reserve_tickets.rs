@@ -1,16 +1,16 @@
-use anyhow::{anyhow, Context, Result};
-
-use crate::domain::sessions::{ItemToken, UserToken};
-use crate::domain::storage::data::reservation::{Reservation, ReservationFactory};
-use crate::domain::storage::data::user::User;
-use crate::domain::storage::reservation::{ActiveReservations, Storage};
-use crate::domain::storage::{items, users};
-use crate::domain::{ReservationId, UserId};
-use dashmap::DashMap;
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::sync::{Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::time::{Duration, Instant};
+
+use anyhow::{anyhow, Context, Error, Result};
+use dashmap::DashMap;
+
+use crate::domain::{ItemToken, ReservationId, UserId, UserToken};
+use crate::domain::storage::{items, users};
+use crate::domain::storage::data::reservation::{Reservation, ReservationFactory};
+use crate::domain::storage::data::user::User;
+use crate::domain::storage::reservation::{ActiveReservations, Storage};
 
 /// Reserve-Tickets Session.
 pub trait Session {
@@ -38,6 +38,7 @@ pub trait Session {
     /// # Error
     /// - if any of the user, the reservation, or the item is not found;
     /// - if the reservation is already confirmed or not valid (e.g. aborted).
+    /// - if the item is occupied, which is possible with multiple users accessing the system.
     fn add(&self, token: ItemToken) -> Result<()>;
 
     /// Removes an item from the list.
@@ -111,11 +112,19 @@ impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
     }
 
     fn add(&self, token: ItemToken) -> Result<()> {
-        unimplemented!()
+        // Occupy the item first in case it is preempted by others.
+        self.items.occupy(token.2)?;
+
+        self.active_reservations.authenticated_add(token)
+            .or_else(|e| {
+                self.items.release(token.2);
+                Err(e)
+            })
     }
 
     fn remove(&self, token: ItemToken) -> Result<()> {
-        unimplemented!()
+        self.active_reservations.authenticated_remove(token)?;
+        Ok(self.items.release(token.2)) // Ok for the tuple is `Copy`
     }
 
     fn summary(&self, token: ItemToken) -> Result<String> {
@@ -144,5 +153,3 @@ struct TempReservation {
 ///
 /// This is the max elapse from when a reservation has been confirmed to when it is paid.
 const TEMP_RESERVATION_TIMEOUT: Duration = Duration::from_secs(5 * 60);
-
-impl<'a, 'b> SessionV1<'a, 'b> {}
