@@ -1,10 +1,11 @@
 use crate::domain::ReservableItemId;
 use anyhow::Result;
+use std::fmt::Debug;
 
 /// Reservable Item. Examples of such items are passenger tickets, pick-up tickets, luggage-checking
 /// tickets etc.
 #[typetag::serde]
-pub trait ReservableItem: Sync + Send {
+pub trait ReservableItem: Debug + Sync + Send {
     fn id(&self) -> ReservableItemId;
 
     /// True if the item was available.

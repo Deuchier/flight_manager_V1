@@ -1,12 +1,12 @@
 use crate::domain::storage::data::item;
 use crate::domain::storage::data::item::ReservableItem;
 use crate::domain::storage::data::item::State::{Available, Occupied};
-use crate::domain::{ReservableItemId};
+use crate::domain::ReservableItemId;
+use crate::foundation::errors::{item_not_available, item_not_found};
 use anyhow::{anyhow, Result};
 use boolinator::Boolinator;
 use dashmap::{mapref, DashMap};
 use serde::{Deserialize, Serialize};
-use crate::foundation::errors::{item_not_available, item_not_found};
 
 /// Reservable-Item Storage.
 ///

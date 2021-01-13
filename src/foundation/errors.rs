@@ -1,6 +1,6 @@
 //! Convenient errors.
 
-use anyhow::{Error, anyhow};
+use anyhow::{anyhow, Error};
 
 pub fn rsv_not_found() -> Error {
     anyhow!("Reservation not found")

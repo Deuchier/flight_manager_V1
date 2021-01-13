@@ -1,15 +1,14 @@
+use crate::domain::storage::data::item::ReservableItem;
+use crate::domain::{FlightId, ReservableItemId};
+use dashmap::DashMap;
 /// # Unstable
 /// This module was directly copied from previous implementations. The transplant may have a lot of
 /// problems. The previous implementation did not support concurrent access either.
 ///
 /// TODO: make flights contain item storages.
-
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use crate::domain::{ReservableItemId, FlightId};
-use crate::domain::storage::data::item::ReservableItem;
-use dashmap::DashMap;
+use std::fmt::Debug;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Flight {
@@ -87,7 +86,6 @@ impl Address {
     }
 }
 
-
 #[cfg(test)]
 mod old_tests {
     use super::*;
@@ -114,9 +112,9 @@ mod old_tests {
                 name: "Merry Land".to_string(),
                 addr: address(),
             },
-            items: HashMap::new(),
+            items: DashMap::new(),
         };
-        flight.items = passenger_tickets(flight.flight_id());
+        flight.items = unimplemented!();
 
         const FILENAME: &str = "./tmp/test_flight.json";
         let mut out = output(FILENAME);

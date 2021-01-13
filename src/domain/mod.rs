@@ -15,13 +15,19 @@ pub type UserId = String; // UserId is the internal id of a user. They can also 
 pub type ReservationId = u64; // This id must be `Copy`.
 pub type FlightId = String;
 
-#[derive(Clone, Serialize, Deserialize, Hash, Eq, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Hash, Eq, PartialEq, Debug)]
 pub struct ReservableItemId {
     flight_id: String,
-    internal_id: String,
+    inner_id: String,
 }
 
 impl ReservableItemId {
+    fn independent(inner: String) -> Self {
+        Self {
+            flight_id: "unknown".to_string(),
+            inner_id: inner
+        }
+    }
     // todo
 }
 
@@ -30,7 +36,6 @@ impl ReservableItemId {
 /// The two tokens are `Copy`.
 pub type UserToken<'a> = (&'a UserId, &'a ReservationId);
 pub type ItemToken<'a> = (&'a UserId, &'a ReservationId, &'a ReservableItemId);
-
 
 fn make_user_token<'a>(tok: &'a ItemToken) -> UserToken<'a> {
     (tok.0, tok.1)

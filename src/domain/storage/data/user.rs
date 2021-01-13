@@ -1,8 +1,8 @@
 use crate::domain::{ReservationId, UserId};
+use crate::foundation::errors::rsv_conflict;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashSet;
-use crate::foundation::errors::rsv_conflict;
 
 #[derive(Serialize, Deserialize)]
 pub struct User {

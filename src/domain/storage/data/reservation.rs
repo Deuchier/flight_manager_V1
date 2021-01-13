@@ -104,6 +104,7 @@ mod test {
     use std::collections::HashSet;
     use std::io::Write;
     use std::iter::FromIterator;
+    use crate::domain::ReservableItemId;
 
     #[test]
     fn serde() {
@@ -128,7 +129,7 @@ mod test {
                     "Test item id with spaces",
                 ]
                 .into_iter()
-                .map(|s| s.to_string()),
+                .map(|s| ReservableItemId::independent(s.to_string())),
             ),
         }
     }

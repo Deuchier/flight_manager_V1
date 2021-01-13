@@ -1,12 +1,12 @@
 use crate::domain::storage::data::reservation::{Reservation, ReservationFactoryV1};
 use crate::domain::storage::data::user::User;
-use crate::domain::{ReservationId, UserId, };
+use crate::domain::{ReservationId, UserId};
+use crate::foundation::errors::user_not_found;
 use anyhow::{anyhow, Result};
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::RwLock;
-use crate::foundation::errors::user_not_found;
 
 /// User Storage
 ///

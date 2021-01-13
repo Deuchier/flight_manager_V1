@@ -11,9 +11,7 @@ use dashmap::DashMap;
 use crate::domain::storage::data::reservation::{
     Reservation, ReservationFactory, ReservationFactoryV1,
 };
-use crate::domain::{
-    make_user_token, ItemToken, ReservationId, UserId, UserToken
-};
+use crate::domain::{make_user_token, ItemToken, ReservationId, UserId, UserToken};
 use crate::foundation::errors::{rsv_conflict, rsv_not_found, user_not_conformant};
 
 /// Reservation Storage.
@@ -77,7 +75,10 @@ impl<'f> CreativeStorage for StorageV1<'f> {
 
 impl<'f> Storage for StorageV1<'f> {
     fn store(&self, r: Reservation) {
-        assert!(self.reservations.insert(r.id(), r).is_none(), rsv_conflict());
+        assert!(
+            self.reservations.insert(r.id(), r).is_none(),
+            rsv_conflict()
+        );
     }
 
     fn authenticated_add_item(&self, tok: ItemToken) -> Result<()> {

@@ -11,11 +11,9 @@ use crate::domain::storage::data::reservation::{Reservation, ReservationFactoryV
 use crate::domain::storage::data::user::User;
 use crate::domain::storage::reservation::{CreativeStorage, Storage, StorageV1};
 use crate::domain::storage::{items, users};
-use crate::domain::{
-    ItemToken, ReservationId, UserId, UserToken,
-};
+use crate::domain::{ItemToken, ReservationId, UserId, UserToken};
+use crate::foundation::errors::{user_not_conformant, user_not_found};
 use std::ops::Add;
-use crate::foundation::errors::{user_not_found, user_not_conformant};
 
 /// Reserve-Tickets Session.
 ///
