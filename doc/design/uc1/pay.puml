@@ -8,6 +8,7 @@ participant "pr:PendingReservations" as PR
 participant "p:Payment" as P <<Interface>>
 participant "r:Reservation" as R
 participant "us:UserStorage" as US
+participant "u:User" as U
 
 [-> S + : pay(u_id, r_id, p: Payment)
     S -> PR + : pay(u_id, r_id, p)
@@ -20,6 +21,8 @@ participant "us:UserStorage" as US
     S <-- PR - : r: Reservation
 
     S -> US + : add_reservation(r)
+        US -> U + : link(r)
+        US <-- U - : Ok
     S <-- US - : Ok
 [<-- S - : Ok
 

@@ -100,7 +100,7 @@ pub trait Session: Sync {
     fn pay(&self, token: UserToken, p: Box<dyn Payment>) -> Result<()>;
 }
 
-/// # Refactor
+/// # Refactor (won't fix)
 /// New design of the `payment` is recorded in the doc. If I had the time and energy I might
 /// refactor the case.
 pub struct SessionV1<'a> {
@@ -185,8 +185,6 @@ impl<'a> SessionV1<'a> {
 
         Ok(ret)
     }
-
-
 }
 
 // TODO: Implement wait-up mechanisms

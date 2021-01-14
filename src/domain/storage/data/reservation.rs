@@ -4,6 +4,7 @@ use boolinator::Boolinator;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Instant;
 
 /// Internal representation of a reservation.
 ///
@@ -13,6 +14,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 pub struct Reservation {
     id: ReservationId,
     user: UserId,
+    due: Instant,
     items: HashSet<ReservableItemId>,
 }
 
@@ -23,6 +25,10 @@ impl Reservation {
 
     pub fn user_id(&self) -> &UserId {
         &self.user
+    }
+
+    pub fn due(&self) -> Instant {
+        self.due
     }
 
     /// Add an item to the reservation list.

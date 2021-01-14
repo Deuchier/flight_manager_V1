@@ -8,9 +8,9 @@
 use crate::domain::storage::data::flight::Address;
 use crate::domain::{ReservableItemId, ReservationId, UserId};
 
+pub mod refund;
 pub mod reserve_tickets;
 pub mod view;
-pub mod refund;
 
 /// Querying configuration.
 pub struct Query(Address, Address);

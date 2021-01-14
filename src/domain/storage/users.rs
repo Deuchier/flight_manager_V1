@@ -1,7 +1,7 @@
 use crate::domain::storage::data::reservation::{Reservation, ReservationFactoryV1};
 use crate::domain::storage::data::user::User;
 use crate::domain::{ReservationId, UserId};
-use crate::foundation::errors::user_not_found;
+use crate::foundation::errors::{user_not_conformant, user_not_found};
 use anyhow::{anyhow, Result};
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
@@ -29,12 +29,15 @@ pub trait Storage: Sync {
     /// When we decide to call this function, it means that we already have a reservation linked
     /// with a certain user in the storage, so, it is unlikely that the user could not be found.
     fn add_reservation(&self, r: Reservation);
+
+    /// # Error
+    /// if user not found
+    fn refundable_reservations_serde(&self, user_id: &UserId) -> Result<Vec<String>>;
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct StorageV1 {
     users: DashMap<UserId, User>,
-    reservations: DashMap<ReservationId, Reservation>,
 }
 
 impl Storage for StorageV1 {
@@ -46,8 +49,14 @@ impl Storage for StorageV1 {
         self.users
             .get_mut(r.user_id())
             .expect(&user_not_found().to_string())
-            .link(r.id());
+            .link(r);
+    }
 
-        self.reservations.insert(r.id(), r);
+    fn refundable_reservations_serde(&self, user_id: &UserId) -> Result<Vec<String>> {
+        Ok(self
+            .users
+            .get_mut(user_id)
+            .ok_or(user_not_found())?
+            .undone_reservations_serde())
     }
 }
