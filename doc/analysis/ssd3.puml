@@ -6,7 +6,17 @@ autonumber "<b>##."
 actor "u:User" as U
 participant "s:System" as S
 
-U -> S : refund(u_id, r_id)
+alt ["independent entry"]
+U -> S : start_refund(u_id)
+U <-- S : all available reservations
+U -> S : Some(r_id)
+else ["through a reservation"]
+U -> S : start_refund_for(u_id, r_id)
+end
+U -> S : reason
+U <-- S : success / failure
+
+
 
 
 @enduml

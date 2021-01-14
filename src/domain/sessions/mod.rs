@@ -10,6 +10,7 @@ use crate::domain::{ReservableItemId, ReservationId, UserId};
 
 pub mod reserve_tickets;
 pub mod view;
+pub mod refund;
 
 /// Querying configuration.
 pub struct Query(Address, Address);

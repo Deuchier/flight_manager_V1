@@ -16,9 +16,6 @@ use crate::foundation::errors::{user_not_conformant, user_not_found};
 use std::ops::Add;
 
 /// Reserve-Tickets Session.
-///
-/// # Sync
-/// Multiple threads can access the same session without contention.
 pub trait Session: Sync {
     /// Start a new reservation for the user. Returns a unique id for identifying the reservation.
     ///
@@ -87,20 +84,25 @@ pub trait Session: Sync {
 
     /// Pays for a reservation.
     ///
-    /// # After
-    /// calling confirm. If the reservation is not confirmed yet, it will not be
+    /// # Expects
+    /// the reservation is confirmed.
+    ///
+    /// # Ensures
+    /// on success, the reservation is persistently stored into the user's profile.
+    ///
+    /// Unpaid reservations that exceed the timeout will be discarded, and will not be recorded in
+    /// the users' profile.
     ///
     /// # Error
     /// - if the payment failed
     /// - if the reservation is already paid.
     /// - if the reservation is not found.
-    ///
-    /// # Persistent Storage
-    /// On success, the function will store the reservation into the user's profile. It is not until
-    /// this function is called that a reservation will finally be stored in the user's profile.
     fn pay(&self, token: UserToken, p: Box<dyn Payment>) -> Result<()>;
 }
 
+/// # Refactor
+/// New design of the `payment` is recorded in the doc. If I had the time and energy I might
+/// refactor the case.
 pub struct SessionV1<'a> {
     pending_reservations: RwLock<Vec<TempReservation>>,
     active_reservations: StorageV1<'a>,
@@ -183,6 +185,8 @@ impl<'a> SessionV1<'a> {
 
         Ok(ret)
     }
+
+
 }
 
 // TODO: Implement wait-up mechanisms
