@@ -5,5 +5,13 @@ use anyhow::Result;
 ///
 /// TODO: implement payment
 pub trait Payment {
+    /// # Returns
+    /// actual amount of money paid
     fn pay(&self, r: &Reservation) -> Result<steel_cent::Money>;
+}
+
+pub trait Refund {
+    /// # Returns
+    /// actual amount of money refunded.
+    fn refund(&self, r: &Reservation) -> Result<steel_cent::Money>;
 }

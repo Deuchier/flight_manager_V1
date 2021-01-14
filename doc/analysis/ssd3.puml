@@ -10,8 +10,7 @@ opt ["independent entry"]
 U -> S : refundable_reservations(u_id)
 U <-- S : all available reservations
 end
-U -> S : start_refund(u_id, r_id)
-U -> S : reason
+U -> S : refund(u_id, r_id, method)
 U <-- S : success / failure
 
 

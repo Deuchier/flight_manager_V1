@@ -92,3 +92,11 @@ makes the calling logics more complicated, but the reservation itself no longer 
 
 There has been long-term debates as to whether we should have states and what states we should have. I don't think there
 are any silver bullets, and only experience will tell me which to choose.
+
+### Low Coupling
+
+It takes great efforts to learn GRASP. The problem is not to recite the nine principles, but to know how to achieve
+them. I found that there's a tendency that the design grows into higher coupling as time goes by. I accepted the truth,
+and it was not until then that I realized how important refactoring is.
+
+In times I shall be working on real-world projects. I won't forget the value of refactoring ever.

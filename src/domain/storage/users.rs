@@ -1,3 +1,4 @@
+use crate::domain::payment::Refund;
 use crate::domain::storage::data::reservation::{Reservation, ReservationFactoryV1};
 use crate::domain::storage::data::user::User;
 use crate::domain::{ReservationId, UserId};
@@ -33,6 +34,17 @@ pub trait Storage: Sync {
     /// # Error
     /// if user not found
     fn refundable_reservations_serde(&self, user_id: &UserId) -> Result<Vec<String>>;
+
+    /// Refund using the method.
+    ///
+    /// # Returns
+    /// actual amount of money refunded.
+    fn refund(
+        &self,
+        user_id: &UserId,
+        r_id: &ReservationId,
+        method: &dyn Refund,
+    ) -> Result<steel_cent::Money>;
 }
 
 #[derive(Serialize, Deserialize)]
@@ -58,5 +70,17 @@ impl Storage for StorageV1 {
             .get_mut(user_id)
             .ok_or(user_not_found())?
             .undone_reservations_serde())
+    }
+
+    fn refund(
+        &self,
+        user_id: &UserId,
+        r_id: &ReservationId,
+        method: &dyn Refund,
+    ) -> Result<steel_cent::Money> {
+        self.users
+            .get_mut(user_id)
+            .ok_or(user_not_found())?
+            .refund(r_id, method)
     }
 }
