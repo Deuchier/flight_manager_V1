@@ -4,17 +4,17 @@ left to right direction
 
 package FlightReservationSystem {
     (Login) as L
+    (View Profile) as VP
     package Core {
         (ViewFlights) as V
         (ReserveTickets) as RT
         (Withdraw) as W
+        (Refund) as R
 
         (Pay) as P
-        (View Profile) as VP
 
         RT -- P : involves
     }
-    (Refund) as R
 }
 
 Actor User as U
