@@ -100,11 +100,11 @@ impl ReservationFactoryV1 {
 #[cfg(test)]
 mod test {
     use crate::domain::storage::data::reservation::{Reservation, ReservationFactoryV1};
+    use crate::domain::ReservableItemId;
     use crate::foundation::file_writer::SimpleWriter;
     use std::collections::HashSet;
     use std::io::Write;
     use std::iter::FromIterator;
-    use crate::domain::ReservableItemId;
 
     #[test]
     fn serde() {

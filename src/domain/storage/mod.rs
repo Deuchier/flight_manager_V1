@@ -7,6 +7,7 @@
 //! the `Users` don't store `ReservationId`s of which reservation that do not belong to them.
 
 pub mod data;
+pub mod flights;
 pub mod items;
 pub mod reservation;
 pub mod users;

@@ -37,7 +37,7 @@ impl Flight {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct PlaneInfo {
+pub struct PlaneInfo {
     id: String,
     r#type: String,
 }
@@ -53,7 +53,7 @@ impl PlaneInfo {
 }
 
 #[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
-struct AirportInfo {
+pub struct AirportInfo {
     name: String,
     addr: Address,
 }
@@ -75,8 +75,8 @@ impl AirportInfo {
 ///     - \[1]: Nation
 ///     - \[2]: Province / State
 ///     - ...
-#[derive(Serialize, Deserialize, Eq, PartialEq, Debug)]
-struct Address {
+#[derive(Serialize, Deserialize, Eq, PartialEq, Debug, Hash)]
+pub struct Address {
     locations: Vec<String>,
 }
 

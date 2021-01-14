@@ -25,3 +25,7 @@ pub fn user_not_found() -> Error {
 pub fn user_not_conformant() -> Error {
     anyhow!("User id not conformant with the reservation")
 }
+
+pub fn flight_not_found() -> Error {
+    anyhow!("Flight not found")
+}

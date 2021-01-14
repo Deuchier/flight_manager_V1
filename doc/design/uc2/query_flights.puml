@@ -6,10 +6,10 @@ autonumber "<b>##."
 participant "s:Session" as S
 participant "fs:FlightStorage" as FS
 
-[-> S + : query((src, dest) = q: Query)
+[-> S + : query_flights((src, dest) = q: Query)
     S -> FS + : query(src, dest)
-    S <-- FS - : result: Vec<FlightDescription>
-[<-- S - : result (serialized)
+    S <-- FS - : result (serialized)
+[<-- S - : result
 
 
 

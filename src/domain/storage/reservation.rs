@@ -110,19 +110,21 @@ impl<'f> Storage for StorageV1<'f> {
     }
 }
 
-/// How DRY should we be?
+/// Helper functions.
 ///
-/// When I was writing this block the other time, I wrote a macro consisting of the logic, and
-/// then called it with different method name. When I finished, I reviewed the block and asked
-/// myself: "Is it all worth it?"
-///
-/// No. It might be hard to admit, but the truth is that it is deterministic that we only need two
-/// functions, one mut and the other not. We not gonna reuse the logic anywhere else, and copying
-/// or pasting the code snippet is not that great an effort.
-///
-/// It was not until then that I started to suspect on the DRY principle. DRY does not come with
-/// no cost. When we say "we should be DRY" we mean that the cost of staying DRY is worth it. When
-/// the premise is no longer held, we have no incentive any more to keep the code DRY.
+// How DRY should we be?
+//
+// When I was writing this block the other time, I wrote a macro consisting of the logic, and
+// then called it with different method name. When I finished, I reviewed the block and asked
+// myself: "Is it all worth it?"
+//
+// No. It might be hard to admit, but the truth is that it is deterministic that we only need two
+// functions, one mut and the other not. We not gonna reuse the logic anywhere else, and copying
+// or pasting the code snippet is not that great an effort.
+//
+// It was not until then that I started to suspect on the DRY principle. DRY does not come with
+// no cost. When we say "we should be DRY" we mean that the cost of staying DRY is worth it. When
+// the premise is no longer held, we have no incentive any more to keep the code DRY.
 impl<'f> StorageV1<'f> {
     // rsv == reservation
     fn checked_rsv_mut(&self, tok: UserToken) -> Result<RefMut<ReservationId, Reservation>> {

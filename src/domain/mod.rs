@@ -25,7 +25,7 @@ impl ReservableItemId {
     fn independent(inner: String) -> Self {
         Self {
             flight_id: "unknown".to_string(),
-            inner_id: inner
+            inner_id: inner,
         }
     }
     // todo

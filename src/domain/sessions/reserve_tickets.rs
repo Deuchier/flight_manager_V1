@@ -101,14 +101,14 @@ pub trait Session: Sync {
     fn pay(&self, token: UserToken, p: Box<dyn Payment>) -> Result<()>;
 }
 
-pub struct SessionV1<'a, 'b, 'c> {
+pub struct SessionV1<'a> {
     pending_reservations: RwLock<Vec<TempReservation>>,
     active_reservations: StorageV1<'a>,
-    users: &'b dyn users::Storage,
-    items: &'c dyn items::Storage,
+    users: &'a dyn users::Storage,
+    items: &'a dyn items::Storage,
 }
 
-impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
+impl<'a> Session for SessionV1<'a> {
     fn start_reservation(&self, user_id: UserId) -> Result<ReservationId> {
         if !self.users.user_exists(&user_id) {
             return Err(user_not_found());
@@ -161,7 +161,7 @@ impl<'a, 'b, 'c> Session for SessionV1<'a, 'b, 'c> {
 }
 
 /// Helpers
-impl<'a, 'b, 'c> SessionV1<'a, 'b, 'c> {
+impl<'a> SessionV1<'a> {
     /// # Error
     /// - if user not found
     /// - if user not conformant with the reservation
