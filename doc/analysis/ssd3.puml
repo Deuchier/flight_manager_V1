@@ -1,0 +1,12 @@
+@startuml
+
+hide footbox
+autonumber "<b>##."
+
+actor "u:User" as U
+participant "s:System" as S
+
+U -> S : refund(u_id, r_id)
+
+
+@enduml
