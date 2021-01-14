@@ -70,6 +70,9 @@ pub trait Session: Sync {
     /// Calling this function will terminate the modifying process of the reservation (i.e. `add` or
     /// `remove`). Any subsequent calls to those functions or this one will result in an error.
     ///
+    /// # Set `due` time (todo)
+    /// When confirming a reservation, the due time of it is updated.
+    ///
     /// # Error
     /// if the reservation is not active.
     fn confirm(&self, token: UserToken) -> Result<()>;

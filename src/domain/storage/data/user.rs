@@ -24,7 +24,7 @@ impl User {
     /// if the reservation id is already in the user's profile. It is very dangerous because there
     /// may be potential reservation-id conflicts.
     pub fn link(&mut self, r: Reservation) {
-        if !self.undone.insert(r.id(), r) {
+        if self.undone.insert(r.id(), r).is_some() {
             panic!(rsv_conflict());
         }
     }

@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
+use chrono::{DateTime, Utc};
 
 /// Internal representation of a reservation.
 ///
@@ -14,9 +15,10 @@ use std::time::Instant;
 pub struct Reservation {
     id: ReservationId,
     user: UserId,
-    due: Instant,
+    due: DateTime<Utc>,
     items: HashSet<ReservableItemId>,
 }
+
 
 impl Reservation {
     pub fn id(&self) -> ReservationId {
@@ -27,8 +29,8 @@ impl Reservation {
         &self.user
     }
 
-    pub fn due(&self) -> Instant {
-        self.due
+    pub fn due(&self) -> &DateTime<Utc> {
+        &self.due
     }
 
     /// Add an item to the reservation list.
@@ -65,6 +67,10 @@ pub trait ReservationFactory {
     /// Creates a new reservation with the given user id.
     ///
     /// Each reservation should have a unique id. They get the id atomically.
+    ///
+    /// # Due
+    /// Before confirming the reservation, the `due` time in it is the time it was created. When
+    /// confirming, the time should be modified correctly.
     fn with_user_id(&self, user_id: UserId) -> Reservation;
 }
 
@@ -85,6 +91,7 @@ impl ReservationFactory for ReservationFactoryV1 {
             // Relaxed because nobody else uses the atomic value.
             id: self.next_id.fetch_add(1, Ordering::Relaxed),
             user: user_id,
+            due: Utc::now(),
             items: Default::default(),
         }
     }
