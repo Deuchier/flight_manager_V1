@@ -9,8 +9,8 @@ use dashmap::DashMap;
 use crate::domain::payment::Payment;
 use crate::domain::storage::data::reservation::{Reservation, ReservationFactoryV1};
 use crate::domain::storage::data::user::User;
-use crate::domain::storage::reservation::{CreativeStorage, Storage, StorageV1};
-use crate::domain::storage::{items, users};
+use crate::domain::storage::reservations::{CreativeStorage, Storage, StorageV1};
+use crate::domain::storage::{items, users, reservations};
 use crate::domain::{ItemToken, ReservationId, UserId, UserToken};
 use crate::foundation::errors::{user_not_conformant, user_not_found};
 use std::ops::Add;
@@ -107,8 +107,9 @@ pub trait Session: Sync {
 /// New design of the `payment` is recorded in the doc. If I had the time and energy I might
 /// refactor the case.
 pub struct SessionV1<'a> {
+    // won't fix: Extract the field as an independent class.
     pending_reservations: RwLock<Vec<TempReservation>>,
-    active_reservations: StorageV1<'a>,
+    active_reservations: &'a dyn reservations::CreativeStorage,
     users: &'a dyn users::Storage,
     items: &'a dyn items::Storage,
 }

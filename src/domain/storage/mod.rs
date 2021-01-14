@@ -9,5 +9,5 @@
 pub mod data;
 pub mod flights;
 pub mod items;
-pub mod reservation;
+pub mod reservations;
 pub mod users;

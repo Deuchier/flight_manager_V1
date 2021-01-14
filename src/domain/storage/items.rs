@@ -1,3 +1,7 @@
+/// Item Storage
+///
+/// Contains definition of the [items::Storage] trait. Also provides a low-level implementation of
+/// it. Note that [flights::StorageV1] implements this trait too.
 use crate::domain::storage::data::item;
 use crate::domain::storage::data::item::ReservableItem;
 use crate::domain::storage::data::item::State::{Available, Occupied};
@@ -7,12 +11,16 @@ use anyhow::{anyhow, Result};
 use boolinator::Boolinator;
 use dashmap::{mapref, DashMap};
 use serde::{Deserialize, Serialize};
+use crate::domain::storage::flights;
 
 /// Reservable-Item Storage.
 ///
 /// It is up to the caller to ensure that external references into this storage are correctly
 /// handled.
-pub trait Storage: Sync {
+///
+/// # Serde
+/// The storage may need to be persistently stored on disk.
+pub trait Storage: Sync + Serialize + Deserialize {
     /// Atomically occupies an item.
     ///
     /// # Error
@@ -34,6 +42,8 @@ pub trait Storage: Sync {
     fn release(&self, item_id: &ReservableItemId) -> Result<()>;
 }
 
+
+/// Leaf storage in the composite pattern.
 #[derive(Serialize, Deserialize)]
 pub struct SimpleStorage {
     items: DashMap<ReservableItemId, Box<dyn ReservableItem>>,

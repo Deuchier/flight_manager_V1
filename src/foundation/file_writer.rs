@@ -8,12 +8,12 @@ pub struct SimpleWriter {
 }
 
 impl SimpleWriter {
-    pub fn new<P: AsRef<Path>>(filename: P) -> Self {
+    pub fn new<P: AsRef<Path>>(path: P) -> Self {
         let f = OpenOptions::new()
             .write(true)
             .create(true)
             .truncate(true)
-            .open(filename)
+            .open(path)
             .expect("Failed to open file");
         SimpleWriter {
             buf: BufWriter::new(f),

@@ -1,14 +1,16 @@
+//! # Unstable
+//! This module was directly copied from previous implementations. The transplant may have a lot of
+//! problems. The previous implementation did not support concurrent access either.
+//!
+//! - Some transplant rejections occurred, but no longer. It is now working rather stably, perhaps
+//!   later sometime I should remove the "Unstable" note.
 use crate::domain::storage::data::item::ReservableItem;
 use crate::domain::{FlightId, ReservableItemId};
 use dashmap::DashMap;
-/// # Unstable
-/// This module was directly copied from previous implementations. The transplant may have a lot of
-/// problems. The previous implementation did not support concurrent access either.
-///
-/// TODO: make flights contain item storages.
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Debug;
+use crate::domain::storage::items;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Flight {
@@ -20,7 +22,7 @@ pub struct Flight {
     items: ItemMap,
 }
 
-pub type ItemMap = DashMap<ReservableItemId, Box<dyn ReservableItem>>;
+pub type ItemMap = items::SimpleStorage;
 
 impl Flight {
     pub fn flight_id(&self) -> &FlightId {

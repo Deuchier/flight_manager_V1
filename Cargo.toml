@@ -12,7 +12,6 @@ boolinator = "2.4.0" # bool to others
 dashmap = { version = "^4.0", features = ["serde"] } # concurrency
 chrono = { version = "0.4", features = ["serde"]} # date & time
 steel-cent = "0.2.3" # Money lib
-rocket = "0.4.6" # web
 
 # serde
 serde = { version = "^1.0", features = ["derive"] }

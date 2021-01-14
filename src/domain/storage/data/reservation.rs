@@ -69,8 +69,8 @@ pub trait ReservationFactory {
     /// Each reservation should have a unique id. They get the id atomically.
     ///
     /// # Due
-    /// Before confirming the reservation, the `due` time in it is the time it was created. When
-    /// confirming, the time should be modified correctly.
+    /// Before confirming the reservation, the `due` time in it is the time when it was created.
+    /// When confirming, the time should be modified correctly.
     fn with_user_id(&self, user_id: UserId) -> Reservation;
 }
 

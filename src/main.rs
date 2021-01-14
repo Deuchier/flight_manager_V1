@@ -8,5 +8,5 @@ use flight_manager_v1::ui;
 
 
 fn main() {
-    ui::ignite();
+    ui::init_ui();
 }

@@ -5,8 +5,8 @@
 //!
 //! This file also contains some type definitions (shorthands) used commonly by the sub-modules.
 mod payment;
-pub mod sessions;
-mod storage;
+pub(crate) mod sessions;
+pub(crate) mod storage;
 
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
@@ -17,18 +17,21 @@ pub type FlightId = String;
 
 #[derive(Clone, Serialize, Deserialize, Hash, Eq, PartialEq, Debug)]
 pub struct ReservableItemId {
-    flight_id: String,
+    flight_id: FlightId,
     inner_id: String,
 }
 
 impl ReservableItemId {
-    fn independent(inner: String) -> Self {
+    pub fn independent(inner: String) -> Self {
         Self {
             flight_id: "unknown".to_string(),
             inner_id: inner,
         }
     }
-    // todo
+
+    pub fn flight_id(&self) -> &FlightId {
+        &self.flight_id
+    }
 }
 
 /// Helper types for simplifying the signature of the sessions.

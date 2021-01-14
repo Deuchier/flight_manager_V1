@@ -13,6 +13,8 @@ use crate::domain::storage::data::reservation::{
 };
 use crate::domain::{make_user_token, ItemToken, ReservationId, UserId, UserToken};
 use crate::foundation::errors::{rsv_conflict, rsv_not_found, user_not_conformant};
+use serde::ser::SerializeSeq;
+use serde::{Deserialize, Serialize};
 
 /// Reservation Storage.
 ///
@@ -49,11 +51,12 @@ pub trait CreativeStorage: Storage {
     fn new_reservation(&self, user_id: UserId) -> ReservationId;
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct StorageV1<'f> {
     // Initially, I used a `RwLock<HashMap<...>>` to implement this. Later, I found this nice
     // lib called `DashMap` which is exactly what I needed.
     reservations: DashMap<ReservationId, Reservation>,
-    factory: &'f ReservationFactoryV1,
+    factory: &'f dyn ReservationFactory + Serialize + Deserialize,
 }
 
 impl<'f> CreativeStorage for StorageV1<'f> {
