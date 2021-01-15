@@ -1,4 +1,4 @@
-use std::borrow::{BorrowMut, Borrow};
+use std::borrow::{Borrow, BorrowMut};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::time::{Duration, Instant};
@@ -171,7 +171,9 @@ impl Session for SessionV1 {
     }
 
     fn pay(&self, token: UserToken, p: Box<dyn Payment>) -> Result<steel_cent::Money> {
-        let ret = self.pending_reservations.process(token, Box::new(move |rsv| p.pay(rsv)))?;
+        let ret = self
+            .pending_reservations
+            .process(token, Box::new(move |rsv| p.pay(rsv)))?;
         self.users.link(token);
         Ok(ret)
     }

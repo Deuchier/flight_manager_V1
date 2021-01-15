@@ -24,7 +24,7 @@ User
 
 ## Main Success Scenario
 
-1. User starts an reservation.
+1. User starts a reservation.
 2. System creates a blank reservation and show it to User.
 3. User does an action.
 4. System responds to the action.<br>

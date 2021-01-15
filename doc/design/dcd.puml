@@ -7,6 +7,7 @@ package Domain {
             -active_reservations: Box<dyn reservations::CreativeStorage>,
             -users: Arc<dyn users::Storage>,
             -items: Arc<dyn items::Storage>,
+            +unsafe from_components(...) -> Self
             +start_reservation(user_id: UserId) -> Result<ReservationId>;
             +add(token: ItemToken) -> Result<()>;
             +remove(token: ItemToken) -> Result<()>;
@@ -34,7 +35,9 @@ package Domain {
 
         }
 
+
         interface ReservationStorage
+        interface CreativeReservationStorage
         interface FlightStorage
         interface ItemStorage
 
@@ -43,10 +46,15 @@ package Domain {
             class Flight
         }
 
-
+        ReservationStorage <|-- CreativeReservationStorage
     }
 
+
+    ReserveTicketsSession --> ReservationStorage
+    ReserveTicketsSession --> CreativeReservationStorage
     ReserveTicketsSession ..> UserStorage
+    ReserveTicketsSession ..> ItemStorage
+
 }
 
 @enduml

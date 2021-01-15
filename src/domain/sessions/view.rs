@@ -22,7 +22,7 @@ pub trait Session {
     ///
     /// # Error
     /// if user not found
-    fn view_reservations(&self, tok: UserToken) ->Result<(Vec<String>, Vec<String>)>;
+    fn view_reservations(&self, tok: UserToken) -> Result<(Vec<String>, Vec<String>)>;
 }
 
 pub struct SessionV1 {
@@ -44,7 +44,8 @@ impl Session for SessionV1 {
             .map(|r_id| self.reservations.summary(tok));
         let b = self
             .users
-            .done_reservations(tok.0).unwrap()
+            .done_reservations(tok.0)
+            .unwrap()
             .into_iter()
             .map(|r_id| self.reservations.summary(tok));
 

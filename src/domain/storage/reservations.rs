@@ -18,8 +18,8 @@ use crate::foundation::file_reader::SimpleReader;
 use crate::foundation::file_writer::SimpleWriter;
 use serde::ser::SerializeSeq;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
 use std::any::Any;
+use std::path::Path;
 
 /// Reservation Storage.
 ///
@@ -43,7 +43,11 @@ pub trait Storage: Sync {
     fn summary(&self, tok: UserToken) -> Result<String>;
 
     /// Performs an action on a reservation.
-    fn process(&self, tok: UserToken, op: Box<dyn FnOnce(&Reservation) -> Result<steel_cent::Money>>) -> Result<steel_cent::Money>;
+    fn process(
+        &self,
+        tok: UserToken,
+        op: Box<dyn FnOnce(&Reservation) -> Result<steel_cent::Money>>,
+    ) -> Result<steel_cent::Money>;
 
     /// Transfer a reservation in this storage to another.
     ///
@@ -137,7 +141,11 @@ impl Storage for StorageV1 {
         Ok(reservation.summary())
     }
 
-    fn process(&self, tok: UserToken, op: Box<dyn FnOnce(&Reservation) -> Result<steel_cent::Money>>) -> Result<steel_cent::Money> {
+    fn process(
+        &self,
+        tok: UserToken,
+        op: Box<dyn FnOnce(&Reservation) -> Result<steel_cent::Money>>,
+    ) -> Result<steel_cent::Money> {
         let guard = self.checked_rsv(tok)?;
         Ok(op(&*guard)?)
     }

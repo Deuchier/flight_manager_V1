@@ -14,7 +14,7 @@ Alas.
 
 *The flight-reservation system* (FRS) is a simplified system.
 
-The intrinsic features of a reservation system requires that it stores some states. The states are:
+The intrinsic features of a reservation system require that it stores some states. The states are:
 
 - *User information*. See [code doc](src/domain/storage/users.rs).
 
