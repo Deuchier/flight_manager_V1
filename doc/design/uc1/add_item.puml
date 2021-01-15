@@ -1,0 +1,27 @@
+@startuml
+
+hide footbox
+autonumber "<b>##."
+
+participant "s:Session" as S
+participant "is:ItemStorage" as IS <<Interface>>
+participant "active_reservations\n:ReservationStorage" as AR <<Interface>>
+participant "r:Reservation" as R
+
+[-> S + : add_item(u_id, r_id, item_id)
+    S -> IS + : occupy(item_id)
+    S <-- IS - : Ok
+    S -> AR + : add(u_id, r_id, item_id)
+        AR -> R + : expect u_id == user_id()
+        AR -> R : add(item_id)
+        AR <-- R - : Ok
+    alt
+    S <-- AR - : Ok
+[<-- S : Ok
+    else ["Err"]
+    S -> IS + : release(item_id)
+    S <-- IS - : Ok
+[<-- S - : Err
+    end
+
+@enduml

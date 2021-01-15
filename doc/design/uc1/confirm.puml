@@ -4,15 +4,17 @@ hide footbox
 autonumber "<b>##."
 
 participant "s:Session" as S
-participant "ar:ActiveReservationStorage" as AR
+participant "active_reservations\n:ReservationStorage" as AR <<Interface>>
+participant "pending_reservations\n:ReservationStorage" as PR <<Interface>>
 participant "r:Reservation" as R
-participant "pr:PendingReservations" as PR
 
 [-> S + : confirm(u_id, r_id)
-    S -> AR + : authenticated_extract(u_id, r_id)
-        AR -> R : expect u_id == user_id()
-    S <-- AR - : Ok: r: Reservation
-    S -> PR : push(r)
+    S -> AR + : transfer_to(u_id, r_id, &pr)
+        AR -> R + : expect u_id == user_id()
+        deactivate R
+        AR -> PR + : unsafe { store(r) }
+        AR <-- PR - : Ok
+    S <-- AR - : Ok
 [<-- S - : Ok
 
 @enduml

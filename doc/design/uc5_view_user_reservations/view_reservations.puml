@@ -4,20 +4,31 @@ hide footbox
 autonumber "<b>##."
 
 participant "s:Session" as S
-participant "us:UserStorage" as US
+participant "us:UserStorage" as US <<Interface>>
 participant "u:User" as U
 participant "rs:ReservationStorage" as RS
 
 [-> S + : view_reservations(u_id)
-    S -> US + : reservations(u_id)
-        US -> U + : reservations()
-        US <-- U - : vr: Vec<ReservationId>
-    S <-- US - : vr
+    S -> US + : undone_reservations(u_id)
+        US -> U + : undone_reservations()
+        US <-- U - : a: Vec<ReservationId>
+    S <-- US - : a
+    
+    S -> US + : done_reservations(u_id)
+        US -> U + : done_reservations()
+        US <-- U - : b: Vec<ReservationId>
+    S <-- US - : b
 
     loop ["more items"]
-    S -> RS + : s: String (serialized reservations) =\n\tauthenticated_summary(u_id, r_id in vr)
-    deactivate RS
+    S -> RS + : summary(u_id, r_id in a)
+    S <-- RS - : s: String; (undone: Vec<String>).push(s)
     end
-[<-- S - : vs: Vec<String>
+    
+    loop ["more items"]
+    S -> RS + : summary(u_id, r_id in b)
+    S <-- RS - : s: String; (done: Vec<String>).push(s)
+    end
+    
+[<-- S - : (undone, done)
 
 @enduml

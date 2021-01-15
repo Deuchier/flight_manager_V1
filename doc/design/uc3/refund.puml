@@ -11,19 +11,23 @@ participant "us:UserStorage" as US <<Interface>>
 participant "u:User" as U
 
 [-> S + : refund(u_id, r_id, method: Refund)
-    S -> RS + : refund(u_id, r_id, method)
-        RS -> RE + : refund(&r: Reservation)
+    S -> RS + : act_on(u_id, r_id, method)
+        RS -> R + : expect u_id == user_id()
+        deactivate R
+        RS -> RE + : refund(&r)
             loop ["as needed"]
             RE -> R + : do_something
             deactivate R
             end
-        RS <-- RE - : Ok
-    S <-- RS - : Ok
+        RS <-- RE - : refunded: Money
+    S <-- RS - : refunded
 
     S -> US + : withdraw(u_id, r_id)
         US -> U + : withdraw(r_id)
-        US <-- U - : Ok
-    S <-- US - : Ok
+        deactivate U
+    deactivate US
 [<-- S - : Ok
+
+
 
 @enduml

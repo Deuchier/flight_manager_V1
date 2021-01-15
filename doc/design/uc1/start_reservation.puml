@@ -4,11 +4,9 @@ hide footbox
 autonumber "<b>##."
 
 participant "s:Session" as S
-participant "us:UserStorage" as US
-participant "ar:ActiveReservationStorage" as AR
-participant "rf:ReservationFactory" as RF
-
-' TODO: Law of Demeter
+participant "us:UserStorage" as US <<Interface>>
+participant "active_reservations\n:CreativeReservationStorage" as AR <<Interface>>
+participant "rf:ReservationFactory" as RF <<Interface>>
 
 [-> S + : start_reservation(user_id)
     S -> US + : user_exists(user_id)
@@ -20,13 +18,6 @@ participant "rf:ReservationFactory" as RF
         AR <-- RF - : r: Reservation
     S <-- AR - : r_id: ReservationId
 [<-- S - : r_id
-note bottom
-    Note that the reservation is temporarily stored in
-    ar:ActiveReservationStorage. It is not until `confirm`
-    is called that the reservation will be eventually
-    stored into persistent storages and linked with the
-    user.
-end note
 
 
 @enduml

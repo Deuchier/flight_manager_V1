@@ -1,5 +1,6 @@
 use crate::domain::sessions::{refund, reserve_tickets, view};
 use crate::domain::storage::data::reservation::ReservationFactoryV1;
+use crate::domain::storage::reservations::Storage;
 use crate::domain::storage::{flights, reservations, users, RsvMap};
 use crate::domain::{ReservableItemId, ReservationId};
 use crate::foundation::file_reader::SimpleReader;
@@ -12,63 +13,64 @@ use std::io::{BufReader, Read};
 use std::sync::{Arc, RwLock};
 
 /// A pack containing long-term structs that have been initialized.
-pub struct GlobalPack<'a> {
-    reservation_factory: ReservationFactoryV1,
+pub struct GlobalPack {
+    rsv_factory: Arc<ReservationFactoryV1>,
 
     users: Arc<users::StorageV1>,
     flights: Arc<flights::StorageV1>,
-    reservations: reservations::StorageV1,
+    reservations: Arc<reservations::StorageV1>,
 
+    refund: refund::SessionV1,
     reserve_tickets: reserve_tickets::SessionV1,
+    view: view::SessionV1,
 }
 
 /// Initialize the program.
 ///
 /// # Return
 /// Sessions of the domain layer.
-pub fn init() {
-    // 0. init storages.
-    let users = Arc::new(from(USER_STORAGE));
-    let flights = Arc::new(from(FLIGHT_STORAGE));
+///
+/// # Unsafe
+/// The initialization is very error-prone. If any errors occur, it might be that the initialization
+/// here has something wrong.
+pub unsafe fn init() -> GlobalPack {
+    // init storages
+    let users: Arc<users::StorageV1> = Arc::new(from(USER_STORAGE));
+    let flights: Arc<flights::StorageV1> = Arc::new(from(FLIGHT_STORAGE));
 
-    // The reservation storage needs a bit special care.
     let reservations: RsvMap = from(RSV_STORAGE);
 
-    //     first, init [ReservationFactory]
     let stats = program_stats().unwrap_or({
         eprintln!("{}", PROGRAM_STATS_NOT_FOUND_MSG);
         ProgramStats {
             id_pool: full_search_next_id(&reservations),
         }
     });
-    let reservation_factory = unsafe { Arc::new(ReservationFactoryV1::new(stats.id_pool)) };
 
-    //     then, init [reservations::StorageV1]
-    let reservations = unsafe {
-        reservations::StorageV1::from_components(reservations, reservation_factory.clone())
-    };
+    let rsv_factory = Arc::new(ReservationFactoryV1::new(stats.id_pool));
 
-    // 1. init sessions
-    let empty_reservation_storage = unsafe {
+    let reservations = Arc::new(reservations::StorageV1::from_components(
+        reservations,
+        rsv_factory.clone(),
+    ));
+
+    // init sessions
+    let make_empty_rsv_storage = || {
         Box::new(reservations::StorageV1::from_components(
             RsvMap::new(),
-            reservation_factory.clone(),
+            rsv_factory.clone(),
         ))
     };
 
-    let refund = unsafe { refund::SessionV1::from_components(users.clone()) };
-    let reserve_tickets = unsafe {
-        reserve_tickets::SessionV1::from_components(
-            RwLock::new(vec![]),
-            empty_reservation_storage,
-            users.clone(),
-            flights.clone(),
-        )
-    };
-    let view = unsafe { view::SessionV1::from_components(flights.clone()) };
-
-
-    unimplemented!()
+    let refund = refund::SessionV1::from_components(users.clone(), reservations.clone());
+    let reserve_tickets = reserve_tickets::SessionV1::from_components(
+        make_empty_rsv_storage(),
+        make_empty_rsv_storage(),
+        users.clone(),
+        flights.clone(),
+    );
+    let view =
+        view::SessionV1::from_components(users.clone(), reservations.clone(), flights.clone());
 
     // helpers
 
@@ -83,6 +85,16 @@ pub fn init() {
             .max()
             .unwrap_or(0)
             + 1
+    }
+
+    GlobalPack {
+        rsv_factory,
+        users,
+        flights,
+        reservations,
+        refund,
+        reserve_tickets,
+        view,
     }
 }
 

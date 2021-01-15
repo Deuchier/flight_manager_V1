@@ -1,7 +1,7 @@
 use crate::domain::payment::Refund;
 use crate::domain::storage::data::reservation::{Reservation, ReservationFactoryV1};
 use crate::domain::storage::data::user::User;
-use crate::domain::{ReservationId, UserId};
+use crate::domain::{ReservationId, UserId, UserToken};
 use crate::foundation::errors::{user_not_conformant, user_not_found};
 use anyhow::{anyhow, Result};
 use dashmap::DashMap;
@@ -24,32 +24,26 @@ use std::sync::RwLock;
 /// > ended up designing a user storage that is so coupled with reservations?
 /// >
 /// > Someone help kill the me of yesterday!
-pub trait Storage: Sync {
+pub trait Storage: Sync + Send {
     fn user_exists(&self, user_id: &UserId) -> bool;
 
-    /// Adds a reservation to the user's profile.
+    /// Links a reservation to the user's profile.
     ///
     /// # Panic
     /// if the user is not in the storage.
     ///
     /// When we decide to call this function, it means that we already have a reservation linked
-    /// with a certain user in the storage, so, it is unlikely that the user could not be found.
-    fn add_reservation(&self, r: Reservation);
+    /// with a certain user in the storage, and we only have to inform the storage of it now. So, it
+    /// is unlikely that the user could not be found.
+    fn link(&self, token: UserToken);
 
-    /// # Error
-    /// if user not found
-    fn refundable_reservations_serde(&self, user_id: &UserId) -> Result<Vec<String>>;
+    /// Generate a list of reservation related with the user.
+    fn undone_reservations(&self, user_id: &UserId) -> Result<Vec<ReservationId>>;
 
-    /// Refund using the method.
-    ///
-    /// # Returns
-    /// actual amount of money refunded.
-    fn refund(
-        &self,
-        user_id: &UserId,
-        r_id: &ReservationId,
-        method: &dyn Refund,
-    ) -> Result<steel_cent::Money>;
+    /// Similar to [undone_reservations]
+    fn done_reservations(&self, user_id: &UserId) -> Result<Vec<ReservationId>>;
+
+    fn withdraw(&self, token: UserToken) -> Result<()>;
 }
 
 #[derive(Serialize, Deserialize)]
@@ -62,30 +56,33 @@ impl Storage for StorageV1 {
         self.users.contains_key(user_id)
     }
 
-    fn add_reservation(&self, r: Reservation) {
+    fn link(&self, token: UserToken) {
         self.users
-            .get_mut(r.user_id())
-            .expect(&user_not_found().to_string())
-            .link(r);
+            .get_mut(token.0)
+            .expect("User should be in the storage")
+            .link(token.1.clone());
     }
 
-    fn refundable_reservations_serde(&self, user_id: &UserId) -> Result<Vec<String>> {
+    fn undone_reservations(&self, user_id: &UserId) -> Result<Vec<ReservationId>> {
         Ok(self
             .users
-            .get_mut(user_id)
+            .get(user_id)
             .ok_or(user_not_found())?
-            .undone_reservations_serde())
+            .undone_reservations())
     }
 
-    fn refund(
-        &self,
-        user_id: &UserId,
-        r_id: &ReservationId,
-        method: &dyn Refund,
-    ) -> Result<steel_cent::Money> {
-        self.users
-            .get_mut(user_id)
+    fn done_reservations(&self, user_id: &UserId) -> Result<Vec<ReservationId>> {
+        Ok(self
+            .users
+            .get(user_id)
             .ok_or(user_not_found())?
-            .refund(r_id, method)
+            .done_reservations())
+    }
+
+    fn withdraw(&self, token: UserToken) -> Result<()> {
+        self.users
+            .get_mut(token.0)
+            .ok_or(user_not_found())?
+            .withdraw(token.1)
     }
 }

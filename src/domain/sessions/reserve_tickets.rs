@@ -1,4 +1,4 @@
-use std::borrow::BorrowMut;
+use std::borrow::{BorrowMut, Borrow};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::time::{Duration, Instant};
@@ -14,6 +14,7 @@ use crate::domain::storage::{items, reservations, users};
 use crate::domain::{ItemToken, ReservationId, UserId, UserToken};
 use crate::foundation::errors::{user_not_conformant, user_not_found};
 use std::ops::Add;
+use steel_cent::Money;
 
 /// Reserve-Tickets Session.
 pub trait Session: Sync {
@@ -91,23 +92,23 @@ pub trait Session: Sync {
     /// the reservation is confirmed.
     ///
     /// # Ensures
-    /// on success, the reservation is persistently stored into the user's profile.
-    ///
     /// Unpaid reservations that exceed the timeout will be discarded, and will not be recorded in
-    /// the users' profile.
+    /// the users' profile. (won't do)
+    ///
+    /// # Returns
+    /// money actually paid.
     ///
     /// # Error
     /// - if the payment failed
     /// - if the reservation is already paid.
     /// - if the reservation is not found.
-    fn pay(&self, token: UserToken, p: Box<dyn Payment>) -> Result<()>;
+    fn pay(&self, token: UserToken, p: Box<dyn Payment>) -> Result<steel_cent::Money>;
 }
 
 /// # Won't fix
 /// 1. New design of the `payment` is recorded in the doc. If I had the time and energy I might
 ///    refactor the case.
 /// 2. Implement timing facilities of pending reservations.
-///
 pub struct SessionV1 {
     pending_reservations: Box<dyn reservations::Storage>,
     active_reservations: Box<dyn reservations::CreativeStorage>,
@@ -144,12 +145,10 @@ impl Session for SessionV1 {
         // Occupy the item first in case it is preempted by others.
         self.items.occupy(token.2)?;
 
-        self.active_reservations
-            .add_item(token)
-            .or_else(|e| {
-                self.items.release(token.2);
-                Err(e)
-            })
+        self.active_reservations.add_item(token).or_else(|e| {
+            self.items.release(token.2);
+            Err(e)
+        })
     }
 
     fn remove_item(&self, token: ItemToken) -> Result<()> {
@@ -162,80 +161,18 @@ impl Session for SessionV1 {
     }
 
     fn confirm(&self, token: UserToken) -> Result<()> {
-        let reservation = self.active_reservations.extract(token)?;
-
-        let mut guard = self.pending_reservations.write().unwrap();
-        Ok(guard.push(TempReservation::with_wait_time(
-            reservation,
-            TMP_RSV_TIMEOUT,
-        )))
+        self.active_reservations
+            .transfer_to(token, self.pending_reservations.borrow())
     }
 
     fn abort(&self, token: UserToken) -> Result<()> {
-        self.active_reservations.extract(token)?; // drop
+        unsafe { self.active_reservations.extract(token)? }; // drop
         Ok(())
     }
 
-    fn pay(&self, token: UserToken, p: Box<dyn Payment>) -> Result<()> {
-        let reservation = self.authenticated_extract_tmp(token)?;
-        p.pay(&reservation)?;
-        self.users.add_reservation(reservation);
-        Ok(())
-    }
-}
-
-/// Helpers
-impl SessionV1 {
-    /// # Error
-    /// - if user not found
-    /// - if user not conformant with the reservation
-    fn authenticated_extract_tmp(&self, token: UserToken) -> Result<Reservation> {
-        let mut reservations = self.pending_reservations.write().unwrap();
-
-        let last = reservations.len() - 1;
-        let pos = reservations
-            .iter()
-            .position(|r| r.reservation.id() == *token.1)
-            .ok_or(user_not_found())?;
-
-        reservations.swap(pos, last);
-
-        let ret = Reservation::from(reservations.pop().unwrap());
-        if ret.user_id() != token.0 {
-            return Err(user_not_conformant());
-        }
-
+    fn pay(&self, token: UserToken, p: Box<dyn Payment>) -> Result<steel_cent::Money> {
+        let ret = self.pending_reservations.process(token, Box::new(move |rsv| p.pay(rsv)))?;
+        self.users.link(token);
         Ok(ret)
     }
 }
-
-// TODO: Implement wait-up mechanisms
-struct TempReservation {
-    deadline: Instant,
-    reservation: Reservation,
-}
-
-impl From<TempReservation> for Reservation {
-    /// **Does NOT check if the deadline is passed**
-    ///
-    /// I could have checked it here, but a problem occurs: What if when externally checking the
-    /// deadline it was not passed, yet when extracting it, the reserve is true?
-    fn from(t: TempReservation) -> Self {
-        t.reservation
-    }
-}
-
-impl TempReservation {
-    /// Create a clock-counted reservation pack with the designated duration.
-    fn with_wait_time(reservation: Reservation, wait_for: Duration) -> Self {
-        Self {
-            deadline: Instant::now().add(wait_for),
-            reservation,
-        }
-    }
-}
-
-/// Timeout for a new reservation.
-///
-/// This is the max elapse from when a reservation has been confirmed to when it is paid.
-const TMP_RSV_TIMEOUT: Duration = Duration::from_secs(5 * 60);

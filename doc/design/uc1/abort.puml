@@ -4,11 +4,11 @@ hide footbox
 autonumber "<b>##."
 
 participant "s:Session" as S
-participant "ar:ActiveReservationStorage" as AR
+participant "active_reservations\n:ReservationStorage" as AR <<Interface>>
 participant "r:Reservation" as R
 
 [-> S + : abort(u_id, r_id)
-    S -> AR + : authenticated_extract(u_id, r_id)\n// See SD "confirm"
+    S -> AR + : unsafe { extract(u_id, r_id) }
     S <-- AR - : r: Reservation
     S -> R ! : drop
 [<-- S - : Ok

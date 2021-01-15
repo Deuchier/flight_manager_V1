@@ -4,26 +4,28 @@ hide footbox
 autonumber "<b>##."
 
 participant "s:Session" as S
-participant "pr:PendingReservations" as PR
+participant "pending_reservations\n:ReservationStorage" as PR <<Interface>>
 participant "p:Payment" as P <<Interface>>
 participant "r:Reservation" as R
-participant "us:UserStorage" as US
+participant "us:UserStorage" as US <<Interface>>
 participant "u:User" as U
 
 [-> S + : pay(u_id, r_id, p: Payment)
-    S -> PR + : pay(u_id, r_id, p)
-        PR -> R : authenticate(u_id)\n// See SD `confirm`
+    S -> PR + : act_on(u_id, r_id, p)
+        PR -> R + : expect u_id == user_id()
+        deactivate R
         PR -> P + : pay(&r)
-            opt ["details up to implementation"]
-                P --> R : do something
+            loop ["as need"]
+                P --> R + : do something
+                deactivate R
             end
-        PR <-- P - : Ok
-    S <-- PR - : r: Reservation
+        PR <-- P - : paid: Money
+    S <-- PR - : paid
 
-    S -> US + : add_reservation(r)
+    S ->> US + : link(u_id, r_id)
         US -> U + : link(r)
-        US <-- U - : Ok
-    S <-- US - : Ok
+        deactivate U
+    deactivate US
 [<-- S - : Ok
 
 

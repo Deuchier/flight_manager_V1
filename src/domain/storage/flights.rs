@@ -59,7 +59,7 @@ impl StorageV1 {
     ///
     /// # Returns
     /// A guard to the item storage.
-    fn inner_item_storage(&self, item_id: &ReservableItemId) -> Result<(Ref<FlightId, Flight>)> {
+    fn inner_item_storage(&self, item_id: &ReservableItemId) -> Result<Ref<FlightId, Flight>> {
         //! (Put in the report)
         //!
         //! I used a dyn trait [item::Storage] as the inner storage of [Flight]. Later when I was

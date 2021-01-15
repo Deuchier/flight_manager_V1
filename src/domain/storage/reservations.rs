@@ -19,6 +19,7 @@ use crate::foundation::file_writer::SimpleWriter;
 use serde::ser::SerializeSeq;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+use std::any::Any;
 
 /// Reservation Storage.
 ///
@@ -26,7 +27,6 @@ use std::path::Path;
 /// multiple instances of reservation storages present. For example, we may need temporary storage
 /// for active reservations which are not confirmed.
 pub trait Storage: Sync {
-
     /// Add the item to the reservation list, does not check if the item exists (it can't anyway).
     ///
     /// # Error
@@ -42,11 +42,14 @@ pub trait Storage: Sync {
     /// similar.
     fn summary(&self, tok: UserToken) -> Result<String>;
 
+    /// Performs an action on a reservation.
+    fn process(&self, tok: UserToken, op: Box<dyn FnOnce(&Reservation) -> Result<steel_cent::Money>>) -> Result<steel_cent::Money>;
+
     /// Transfer a reservation in this storage to another.
     ///
     /// # Error
     /// similar
-    fn transfer(&self, tok: UserToken, other: &dyn Storage) -> Result<()> {
+    fn transfer_to(&self, tok: UserToken, other: &dyn Storage) -> Result<()> {
         unsafe { Ok(other.store(self.extract(tok)?)) }
     }
 
@@ -132,6 +135,11 @@ impl Storage for StorageV1 {
     fn summary(&self, tok: UserToken) -> Result<String> {
         let reservation = self.checked_rsv(tok)?;
         Ok(reservation.summary())
+    }
+
+    fn process(&self, tok: UserToken, op: Box<dyn FnOnce(&Reservation) -> Result<steel_cent::Money>>) -> Result<steel_cent::Money> {
+        let guard = self.checked_rsv(tok)?;
+        Ok(op(&*guard)?)
     }
 
     unsafe fn store(&self, r: Reservation) {

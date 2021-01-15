@@ -21,7 +21,7 @@ use serde::{Deserialize, Serialize};
 /// # Serde
 /// The storage may need to be persistently stored on disk.
 #[typetag::serde]
-pub trait Storage: Sync {
+pub trait Storage: Sync + Send {
     /// Atomically occupies an item.
     ///
     /// # Error

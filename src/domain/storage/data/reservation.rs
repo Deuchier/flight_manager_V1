@@ -1,4 +1,5 @@
 use crate::domain::{ReservableItemId, ReservationId, UserId};
+use crate::foundation::errors::{item_not_found, rsv_conflict};
 use anyhow::{anyhow, Result};
 use boolinator::Boolinator;
 use chrono::{DateTime, Utc};
@@ -15,7 +16,7 @@ use std::time::Instant;
 pub struct Reservation {
     id: ReservationId,
     user: UserId,
-    due: DateTime<Utc>,
+    paid: bool,
     items: HashSet<ReservableItemId>,
 }
 
@@ -28,8 +29,14 @@ impl Reservation {
         &self.user
     }
 
-    pub fn due(&self) -> &DateTime<Utc> {
-        &self.due
+    /// Set `paid` to `true`.
+    ///
+    /// # Returns
+    /// true if `paid` was false, false otherwise.
+    pub fn pay(&mut self) -> bool {
+        let ret = !self.paid;
+        self.paid = true;
+        ret
     }
 
     /// Add an item to the reservation list.
@@ -37,22 +44,19 @@ impl Reservation {
     /// # Error
     /// if an item with the same id is already in the list, since items should have unique ids.
     pub fn add(&mut self, item: ReservableItemId) -> Result<()> {
-        self.items
-            .insert(item)
-            .ok_or(anyhow!("Reservable Item Id conflicted"))
+        self.items.insert(item).ok_or(rsv_conflict())
     }
 
     pub fn remove(&mut self, item: &ReservableItemId) -> Result<()> {
-        self.items
-            .remove(item)
-            .ok_or(anyhow!("Item not in the list"))
+        self.items.remove(item).ok_or(item_not_found())
     }
 
     /// Generate a summary of the reservation.
     ///
     /// No error. Why would the function ever go wrong?
     pub fn summary(&self) -> String {
-        serde_json::to_string(self).expect("Error when serializing the reservation")
+        const MSG: &str = "Error when serializing the reservation";
+        serde_json::to_string(self).expect(MSG)
     }
 }
 
@@ -62,14 +66,10 @@ impl Reservation {
 /// This trait must be implemented with care. Reservations should have unique ids. Multiple
 /// instances of factories should produce their products with conforming ids. Singletons could be
 /// preferred, which should be taken care of in the initialization.
-pub trait ReservationFactory: Sync {
+pub trait ReservationFactory: Sync + Send {
     /// Creates a new reservation with the given user id.
     ///
     /// Each reservation should have a unique id. They get the id atomically.
-    ///
-    /// # Due
-    /// Before confirming the reservation, the `due` time in it is the time when it was created.
-    /// When confirming, the time should be modified correctly.
     fn with_user_id(&self, user_id: UserId) -> Reservation;
 }
 
@@ -80,17 +80,16 @@ pub trait ReservationFactory: Sync {
 /// Serde required because it needs to be restored after restart of the program.
 #[derive(Serialize, Deserialize)]
 pub struct ReservationFactoryV1 {
-    // TODO: finish initialization.
     next_id: AtomicU64,
 }
 
 impl ReservationFactory for ReservationFactoryV1 {
-    fn with_user_id(&self, user_id: UserId) -> Reservation {
+    fn with_user_id(&self, user: UserId) -> Reservation {
         Reservation {
             // Relaxed because nobody else uses the atomic value.
             id: self.next_id.fetch_add(1, Ordering::Relaxed),
-            user: user_id,
-            due: Utc::now(),
+            user,
+            paid: false,
             items: Default::default(),
         }
     }
@@ -133,6 +132,7 @@ mod test {
         Reservation {
             id: 114514,
             user: "TestUser".to_string(),
+            paid: true,
             items: HashSet::from_iter(
                 vec![
                     "TestItemId1",
