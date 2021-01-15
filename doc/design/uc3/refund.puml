@@ -4,20 +4,24 @@ hide footbox
 autonumber "<b>##."
 
 participant "s:Session" as S
-participant "us:UserStorage" as US
-participant "u:User" as U
+participant "rs:ReservationStorage" as RS <<Interface>>
 participant "method:Refund" as RE <<Interface>>
 participant "r:Reservation" as R
+participant "us:UserStorage" as US <<Interface>>
+participant "u:User" as U
 
 [-> S + : refund(u_id, r_id, method: Refund)
-    S -> US + : refund(u_id, r_id, method)
-        US -> U + : refund(r_id, method)
-            U -> RE + : refund(&r)
+    S -> RS + : refund(u_id, r_id, method)
+        RS -> RE + : refund(&r: Reservation)
             loop ["as needed"]
-                RE -> R + : query
-                deactivate R
+            RE -> R + : do_something
+            deactivate R
             end
-            U <-- RE - : Ok
+        RS <-- RE - : Ok
+    S <-- RS - : Ok
+
+    S -> US + : withdraw(u_id, r_id)
+        US -> U + : withdraw(r_id)
         US <-- U - : Ok
     S <-- US - : Ok
 [<-- S - : Ok

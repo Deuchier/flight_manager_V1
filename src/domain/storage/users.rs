@@ -19,6 +19,11 @@ use std::sync::RwLock;
 ///
 /// Nonetheless, the program still has some reservation storages. But they are mainly used to store
 /// temporary reservations (undone, unpaid etc).
+///
+/// > My brain must be stuck with shit when I wrote the previous paragraphs. How on earth could I
+/// > ended up designing a user storage that is so coupled with reservations?
+/// >
+/// > Someone help kill the me of yesterday!
 pub trait Storage: Sync {
     fn user_exists(&self, user_id: &UserId) -> bool;
 

@@ -7,6 +7,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use std::time::Instant;
+use boolinator::Boolinator;
 
 #[derive(Serialize, Deserialize)]
 pub struct User {
@@ -15,7 +16,7 @@ pub struct User {
     withdrawn: ReservationMap,
 }
 
-type ReservationMap = HashMap<ReservationId, Reservation>;
+type ReservationMap = HashSet<ReservationId>;
 
 impl User {
     /// Links a reservation with the user.
@@ -23,38 +24,21 @@ impl User {
     /// # Panic
     /// if the reservation id is already in the user's profile. It is very dangerous because there
     /// may be potential reservation-id conflicts.
-    pub fn link(&mut self, r: Reservation) {
-        if self.undone.insert(r.id(), r).is_some() {
-            panic!(rsv_conflict());
-        }
+    pub fn link(&mut self, r: ReservationId) {
+        assert!(self.undone.insert(r), rsv_conflict());
+
     }
 
     /// # Return
     /// serde report of undone reservations.
-    pub fn undone_reservations_serde(&mut self) -> Vec<String> {
-        self.undone
-            .values()
-            .map(|r| serde_json::to_string(r).expect("Serde Err for Reservation"))
-            .collect()
+    pub fn undone_reservations(&mut self) -> Vec<ReservationId> {
+        self.undone.iter().collect()
     }
 
-    /// Refund the reservation.
-    ///
-    /// Note that the user will not check if the reservation is already done. The logic is up to
-    /// the passed [Refund]. In this way I could achieve higher flexibility.
-    ///
     /// # Error
-    /// - if the reservation is not in the user's profile.
-    pub fn refund(
-        &mut self,
-        r_id: &ReservationId,
-        method: &dyn Refund,
-    ) -> Result<steel_cent::Money> {
-        method.refund(
-            self.undone
-                .get(r_id)
-                .or(self.withdrawn.get(r_id))
-                .ok_or(rsv_not_found())?,
-        )
+    /// if the reservation is not in the undone list.
+    pub fn withdrawn(&mut self, r_id: &ReservationId) -> Result<()> {
+        self.undone.remove(r_id).ok_or(rsv_not_found())?;
+        Ok(assert!(self.withdrawn.insert(r_id.clone()), rsv_conflict()))
     }
 }

@@ -1,6 +1,6 @@
 use std::borrow::BorrowMut;
 use std::collections::HashMap;
-use std::sync::{Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::{Arc, Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, Context, Error, Result};
@@ -10,7 +10,7 @@ use crate::domain::payment::Payment;
 use crate::domain::storage::data::reservation::{Reservation, ReservationFactoryV1};
 use crate::domain::storage::data::user::User;
 use crate::domain::storage::reservations::{CreativeStorage, Storage, StorageV1};
-use crate::domain::storage::{items, users, reservations};
+use crate::domain::storage::{items, reservations, users};
 use crate::domain::{ItemToken, ReservationId, UserId, UserToken};
 use crate::foundation::errors::{user_not_conformant, user_not_found};
 use std::ops::Add;
@@ -103,18 +103,35 @@ pub trait Session: Sync {
     fn pay(&self, token: UserToken, p: Box<dyn Payment>) -> Result<()>;
 }
 
-/// # Refactor (won't fix)
-/// New design of the `payment` is recorded in the doc. If I had the time and energy I might
-/// refactor the case.
-pub struct SessionV1<'a> {
-    // won't fix: Extract the field as an independent class.
-    pending_reservations: RwLock<Vec<TempReservation>>,
-    active_reservations: &'a dyn reservations::CreativeStorage,
-    users: &'a dyn users::Storage,
-    items: &'a dyn items::Storage,
+/// # Won't fix
+/// 1. New design of the `payment` is recorded in the doc. If I had the time and energy I might
+///    refactor the case.
+/// 2. Implement timing facilities of pending reservations.
+///
+pub struct SessionV1 {
+    pending_reservations: Box<dyn reservations::Storage>,
+    active_reservations: Box<dyn reservations::CreativeStorage>,
+    users: Arc<dyn users::Storage>,
+    items: Arc<dyn items::Storage>,
 }
 
-impl<'a> Session for SessionV1<'a> {
+impl SessionV1 {
+    pub unsafe fn from_components(
+        pending_reservations: Box<dyn reservations::Storage>,
+        active_reservations: Box<dyn reservations::CreativeStorage>,
+        users: Arc<dyn users::Storage>,
+        items: Arc<dyn items::Storage>,
+    ) -> Self {
+        Self {
+            pending_reservations,
+            active_reservations,
+            users,
+            items,
+        }
+    }
+}
+
+impl Session for SessionV1 {
     fn start_reservation(&self, user_id: UserId) -> Result<ReservationId> {
         if !self.users.user_exists(&user_id) {
             return Err(user_not_found());
@@ -128,7 +145,7 @@ impl<'a> Session for SessionV1<'a> {
         self.items.occupy(token.2)?;
 
         self.active_reservations
-            .authenticated_add_item(token)
+            .add_item(token)
             .or_else(|e| {
                 self.items.release(token.2);
                 Err(e)
@@ -136,16 +153,17 @@ impl<'a> Session for SessionV1<'a> {
     }
 
     fn remove_item(&self, token: ItemToken) -> Result<()> {
-        self.active_reservations.authenticated_remove_item(token)?;
+        self.active_reservations.remove_item(token)?;
         self.items.release(token.2)
     }
 
     fn summary(&self, token: UserToken) -> Result<String> {
-        self.active_reservations.authenticated_summary(token)
+        self.active_reservations.summary(token)
     }
 
     fn confirm(&self, token: UserToken) -> Result<()> {
-        let reservation = self.active_reservations.authenticated_extract(token)?;
+        let reservation = self.active_reservations.extract(token)?;
+
         let mut guard = self.pending_reservations.write().unwrap();
         Ok(guard.push(TempReservation::with_wait_time(
             reservation,
@@ -154,7 +172,7 @@ impl<'a> Session for SessionV1<'a> {
     }
 
     fn abort(&self, token: UserToken) -> Result<()> {
-        self.active_reservations.authenticated_extract(token)?; // drop
+        self.active_reservations.extract(token)?; // drop
         Ok(())
     }
 
@@ -167,7 +185,7 @@ impl<'a> Session for SessionV1<'a> {
 }
 
 /// Helpers
-impl<'a> SessionV1<'a> {
+impl SessionV1 {
     /// # Error
     /// - if user not found
     /// - if user not conformant with the reservation

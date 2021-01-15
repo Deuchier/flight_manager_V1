@@ -5,13 +5,13 @@
 use crate::domain::storage::data::item;
 use crate::domain::storage::data::item::ReservableItem;
 use crate::domain::storage::data::item::State::{Available, Occupied};
+use crate::domain::storage::flights;
 use crate::domain::ReservableItemId;
 use crate::foundation::errors::{item_not_available, item_not_found};
 use anyhow::{anyhow, Result};
 use boolinator::Boolinator;
 use dashmap::{mapref, DashMap};
 use serde::{Deserialize, Serialize};
-use crate::domain::storage::flights;
 
 /// Reservable-Item Storage.
 ///
@@ -20,7 +20,8 @@ use crate::domain::storage::flights;
 ///
 /// # Serde
 /// The storage may need to be persistently stored on disk.
-pub trait Storage: Sync + Serialize + Deserialize {
+#[typetag::serde]
+pub trait Storage: Sync {
     /// Atomically occupies an item.
     ///
     /// # Error
@@ -42,12 +43,12 @@ pub trait Storage: Sync + Serialize + Deserialize {
     fn release(&self, item_id: &ReservableItemId) -> Result<()>;
 }
 
-
 /// Leaf storage in the composite pattern.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct SimpleStorage {
     items: DashMap<ReservableItemId, Box<dyn ReservableItem>>,
 }
+#[typetag::serde]
 
 impl Storage for SimpleStorage {
     fn occupy(&self, id: &ReservableItemId) -> Result<()> {

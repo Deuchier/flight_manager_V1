@@ -1,0 +1,23 @@
+@startuml
+
+hide footbox
+autonumber "<b>##."
+
+participant "s:Session" as S
+participant "us:UserStorage" as US
+participant "u:User" as U
+participant "rs:ReservationStorage" as RS
+
+[-> S + : view_reservations(u_id)
+    S -> US + : reservations(u_id)
+        US -> U + : reservations()
+        US <-- U - : vr: Vec<ReservationId>
+    S <-- US - : vr
+
+    loop ["more items"]
+    S -> RS + : s: String (serialized reservations) =\n\tauthenticated_summary(u_id, r_id in vr)
+    deactivate RS
+    end
+[<-- S - : vs: Vec<String>
+
+@enduml

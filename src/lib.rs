@@ -3,5 +3,5 @@
 pub(crate) mod domain;
 pub(crate) mod foundation;
 
-pub mod ui;
 pub mod init;
+pub mod ui;

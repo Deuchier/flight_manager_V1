@@ -3,18 +3,45 @@
 package Domain {
     package Sessions {
         interface ReserveTicketsSession {
-            +start_reservation(&mut self, user_id: Strg_clientg) -> ReservationId;
-            +add(&mut self, token: ItemToken) -> Result<()>;
-            +remove(&mut self, token: ItemToken) -> Result<()>;
-            +summary(&self, token: ItemToken) -> Result<Strg_clientg>;
-            +confirm(&mut self, token: UserToken) -> Result<()>;
-            +abort(&mut self, token: UserToken) -> Result<()>;
-            +pay(&mut self, token: UserToken) -> Result<()>;
+            -pending_reservations: Box<dyn reservations::Storage>,
+            -active_reservations: Box<dyn reservations::CreativeStorage>,
+            -users: Arc<dyn users::Storage>,
+            -items: Arc<dyn items::Storage>,
+            +start_reservation(user_id: UserId) -> Result<ReservationId>;
+            +add(token: ItemToken) -> Result<()>;
+            +remove(token: ItemToken) -> Result<()>;
+            +summary(&self, token: ItemToken) -> Result<String>;
+            +confirm(token: UserToken) -> Result<()>;
+            +abort(token: UserToken) -> Result<()>;
+            +pay(token: UserToken) -> Result<()>;
+        }
+        
+        interface RefundSession {
+            -users: Arc<dyn users::Storage>,
+            -reservations: Arc<dyn reservations::Storage>,
+            +refundable_reservations(user_id: &UserId) -> Result<Vec<String>>
+            +refund(token: UserToken, method: &dyn Refund) -> Result<Money>
+        }
+
+        interface ViewSession {
+            -flights: Arc<dyn flights::Storage>,
+            +query_flights(&self, q: Query) -> Result<String>
         }
     }
 
     package Storage {
-        interface UserStorage
+        interface UserStorage {
+
+        }
+
+        interface ReservationStorage
+        interface FlightStorage
+        interface ItemStorage
+
+
+        package Data {
+            class Flight
+        }
 
 
     }

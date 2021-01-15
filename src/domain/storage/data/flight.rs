@@ -5,12 +5,12 @@
 //! - Some transplant rejections occurred, but no longer. It is now working rather stably, perhaps
 //!   later sometime I should remove the "Unstable" note.
 use crate::domain::storage::data::item::ReservableItem;
+use crate::domain::storage::items;
 use crate::domain::{FlightId, ReservableItemId};
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Debug;
-use crate::domain::storage::items;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Flight {

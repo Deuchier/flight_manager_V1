@@ -1,11 +1,11 @@
 use crate::domain::{ReservableItemId, ReservationId, UserId};
 use anyhow::{anyhow, Result};
 use boolinator::Boolinator;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
-use chrono::{DateTime, Utc};
 
 /// Internal representation of a reservation.
 ///
@@ -18,7 +18,6 @@ pub struct Reservation {
     due: DateTime<Utc>,
     items: HashSet<ReservableItemId>,
 }
-
 
 impl Reservation {
     pub fn id(&self) -> ReservationId {
@@ -63,7 +62,7 @@ impl Reservation {
 /// This trait must be implemented with care. Reservations should have unique ids. Multiple
 /// instances of factories should produce their products with conforming ids. Singletons could be
 /// preferred, which should be taken care of in the initialization.
-pub trait ReservationFactory {
+pub trait ReservationFactory: Sync {
     /// Creates a new reservation with the given user id.
     ///
     /// Each reservation should have a unique id. They get the id atomically.
