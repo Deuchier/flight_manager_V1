@@ -101,7 +101,7 @@ impl ReservationFactoryV1 {
     /// # Unsafe
     /// Normally the factory should be restored from persistent storage. Call this function only if
     /// no persistent storage is found, in which case an alert should be given.
-    pub(crate) unsafe fn new(init_id: ReservationId) -> Self {
+    pub unsafe fn new(init_id: ReservationId) -> Self {
         Self {
             next_id: AtomicU64::new(init_id),
         }

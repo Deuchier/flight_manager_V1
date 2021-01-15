@@ -1,0 +1,1 @@
+initSidebarItems({"trait":[["Payment","Interface for payments. Implementors can adopt different strategies."],["Refund",""]]});

@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["State","Reservable-Item State."]],"trait":[["ReservableItem","Reservable Item. Examples of such items are passenger tickets, pick-up tickets, luggage-checking tickets etc."]]});

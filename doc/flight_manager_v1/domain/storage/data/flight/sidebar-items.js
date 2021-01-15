@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Address","Address arranged in hierarchical Segments. Addresses are used in describing the airport infos."],["AirportInfo",""],["Flight",""],["PlaneInfo",""]],"type":[["ItemMap",""]]});

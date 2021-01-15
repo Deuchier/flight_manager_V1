@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["dashmap"] = [{"text":"impl&lt;'a, K:&nbsp;'a + Eq + Hash, V:&nbsp;'a, S:&nbsp;BuildHasher + Clone, Q:&nbsp;?Sized, '_&gt; BitOr&lt;&amp;'_ Q&gt; for &amp;'a DashMap&lt;K, V, S&gt; <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;K: Borrow&lt;Q&gt;,<br>&nbsp;&nbsp;&nbsp;&nbsp;Q: Hash + Eq,&nbsp;</span>","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

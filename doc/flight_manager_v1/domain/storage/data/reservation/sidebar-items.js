@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Reservation","Internal representation of a reservation."],["ReservationFactoryV1","Singleton factory building reservations. It stores an internal state of the next id, which will be stored persistently so that even after restarts the ids are still consistent."]],"trait":[["ReservationFactory","Trait representing a reservation factory."]]});

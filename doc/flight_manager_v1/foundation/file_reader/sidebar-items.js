@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["SimpleReader","Simple helper writer that opens a file and overwrites into it."]]});

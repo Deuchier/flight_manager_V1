@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["StorageV1","SerdeThe reservation factory cannot be deserialized here. I need to manually initialize it."]],"trait":[["CreativeStorage","Provide both creating & storing abilities."],["Storage","Reservation Storage."]]});

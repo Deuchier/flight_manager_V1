@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["SessionV1","Won't fixNew design of the `payment` is recorded in the doc. If I had the time and energy I might refactor the case.Implement timing facilities of pending reservations."]],"trait":[["Session","Reserve-Tickets Session."]]});

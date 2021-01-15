@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["SimpleStorage","Leaf storage in the composite pattern."]],"trait":[["Storage","Reservable-Item Storage."]]});

@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["payment",""],["sessions","Sessions"],["storage","Storage."]],"struct":[["ReservableItemId",""]],"type":[["FlightId",""],["ItemToken",""],["ReservationId",""],["UserId",""],["UserToken","Helper types for simplifying the signature of the sessions."]]});

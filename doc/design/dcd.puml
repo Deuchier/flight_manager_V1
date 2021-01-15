@@ -24,7 +24,7 @@ package Domain {
             +summary(&self, token: ItemToken) -> Result<String>;
             +confirm(&self, token: UserToken) -> Result<()>;
             +abort(&self, token: UserToken) -> Result<()>;
-            +pay(&self, token: UserToken) -> Result<()>;
+            +pay(&self, token: UserToken, p: Box<dyn Payment>)\n\t-> Result<steel_cent::Money>;
         }
 
         interface RefundSession {

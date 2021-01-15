@@ -16,4 +16,4 @@ pub mod items;
 pub mod reservations;
 pub mod users;
 
-pub(crate) type RsvMap = DashMap<ReservationId, Reservation>;
+pub type RsvMap = DashMap<ReservationId, Reservation>;

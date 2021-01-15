@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["init","Initialize the program."]],"struct":[["GlobalPack","A pack containing long-term structs that have been initialized."]]});

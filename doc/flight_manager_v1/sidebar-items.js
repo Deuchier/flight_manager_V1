@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["domain","Domain Layer."],["foundation","Fundamental facilities of the program."],["init",""],["ui",""]]});

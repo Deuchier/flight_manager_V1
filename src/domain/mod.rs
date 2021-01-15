@@ -4,9 +4,9 @@
 //! domain model.
 //!
 //! This file also contains some type definitions (shorthands) used commonly by the sub-modules.
-mod payment;
-pub(crate) mod sessions;
-pub(crate) mod storage;
+pub mod payment;
+pub mod sessions;
+pub mod storage;
 
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
