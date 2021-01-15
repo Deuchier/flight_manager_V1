@@ -1,7 +1,7 @@
 @startuml
 
 
-UserInfo "1"-"1" User: describes
+UserInfo "1"-left-"1" User: describes
 class UserInfo {
     +user_id
     +password

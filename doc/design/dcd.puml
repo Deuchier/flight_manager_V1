@@ -3,58 +3,261 @@
 package Domain {
     package Sessions {
         interface ReserveTicketsSession {
+            +start_reservation(&self, user_id: UserId) -> Result<ReservationId>;
+            +add(&self, token: ItemToken) -> Result<()>;
+            +remove(&self, token: ItemToken) -> Result<()>;
+            +summary(&self, token: ItemToken) -> Result<String>;
+            +confirm(&self, token: UserToken) -> Result<()>;
+            +abort(&self, token: UserToken) -> Result<()>;
+            +pay(&self, token: UserToken) -> Result<()>;
+        }
+
+        class ReserveTicketsSessionV1 {
             -pending_reservations: Box<dyn reservations::Storage>,
             -active_reservations: Box<dyn reservations::CreativeStorage>,
             -users: Arc<dyn users::Storage>,
             -items: Arc<dyn items::Storage>,
-            +unsafe from_components(...) -> Self
-            +start_reservation(user_id: UserId) -> Result<ReservationId>;
-            +add(token: ItemToken) -> Result<()>;
-            +remove(token: ItemToken) -> Result<()>;
+            +unsafe from_components(...) -> Self;
+            +start_reservation(&self, user_id: UserId) -> Result<ReservationId>;
+            +add(&self, token: ItemToken) -> Result<()>;
+            +remove(&self, token: ItemToken) -> Result<()>;
             +summary(&self, token: ItemToken) -> Result<String>;
-            +confirm(token: UserToken) -> Result<()>;
-            +abort(token: UserToken) -> Result<()>;
-            +pay(token: UserToken) -> Result<()>;
+            +confirm(&self, token: UserToken) -> Result<()>;
+            +abort(&self, token: UserToken) -> Result<()>;
+            +pay(&self, token: UserToken) -> Result<()>;
         }
-        
+
         interface RefundSession {
+            +refundable_reservations(&self, user_id: &UserId) -> Result<Vec<String>>
+            +refund(&self, token: UserToken, method: &dyn Refund) -> Result<Money>
+        }
+
+        class RefundSessionV1 {
             -users: Arc<dyn users::Storage>,
             -reservations: Arc<dyn reservations::Storage>,
-            +refundable_reservations(user_id: &UserId) -> Result<Vec<String>>
-            +refund(token: UserToken, method: &dyn Refund) -> Result<Money>
+            +unsafe from_components(...) -> Self;
+            +refundable_reservations(&self, user_id: &UserId) -> Result<Vec<String>>
+            +refund(&self, token: UserToken, method: &dyn Refund) -> Result<Money>
         }
 
         interface ViewSession {
-            -flights: Arc<dyn flights::Storage>,
-            +query_flights(&self, q: Query) -> Result<String>
+            +query_flights(&self, src: &Address, dest: &Address) -> Result<String>;
+            +view_reservations(&self, tok: UserToken) -> Result<(Vec<String>, Vec<String>)>;
         }
+
+        class ViewSessionV1 {
+            -flights: Arc<dyn flights::Storage>,
+            +unsafe from_components(...) -> Self;
+            +query_flights(&self, src: &Address, dest: &Address) -> Result<String>;
+            +view_reservations(&self, tok: UserToken) -> Result<(Vec<String>, Vec<String>)>;
+        }
+
+        ReserveTicketsSession <|.. ReserveTicketsSessionV1
+        RefundSession <|.. RefundSessionV1
+        ViewSession <|.. ViewSessionV1
     }
 
     package Storage {
         interface UserStorage {
-
+            +user_exists(&self, user_id: &UserId) -> bool;
+            +link(&self, token: UserToken);
+            +undone_reservations(&self, user_id: &UserId)\n\t-> Result<Vec<ReservationId>>;
+            +done_reservations(&self, user_id: &UserId) -> Result<Vec<ReservationId>>;
+            +withdraw(&self, token: UserToken) -> Result<()>;
         }
 
+        class UserStorageV1 {
+            -users: DashMap<UserId, User>,
+            +user_exists(&self, user_id: &UserId) -> bool;
+            +link(&self, token: UserToken);
+            +undone_reservations(&self, user_id: &UserId)\n\t-> Result<Vec<ReservationId>>;
+            +done_reservations(&self, user_id: &UserId) -> Result<Vec<ReservationId>>;
+            +withdraw(&self, token: UserToken) -> Result<()>;
+        }
 
-        interface ReservationStorage
-        interface CreativeReservationStorage
-        interface FlightStorage
-        interface ItemStorage
+        interface ReservationStorage {
+            +add_item(&self, tok: ItemToken) -> Result<()>;
+            +remove_item(&self, tok: ItemToken) -> Result<()>;
+            +summary(&self, tok: UserToken) -> Result<String>;
+            +process(&self, tok: UserToken,\n\top: Box<dyn FnOnce(&Reservation)\n\t\t-> Result<steel_cent::Money>>)\n\t-> Result<steel_cent::Money>;
+            +transfer_to(&self, tok: UserToken, other: &dyn Storage) -> Result<()>;
+            +unsafe store(&self, r: Reservation);
+            +unsafe extract(&self, tok: UserToken) -> Result<Reservation>;
+        }
 
+        interface CreativeReservationStorage {
+            +add_item(&self, tok: ItemToken) -> Result<()>;
+            +remove_item(&self, tok: ItemToken) -> Result<()>;
+            +summary(&self, tok: UserToken) -> Result<String>;
+            +process(&self, tok: UserToken,\n\top: Box<dyn FnOnce(&Reservation)\n\t\t-> Result<steel_cent::Money>>)\n\t-> Result<steel_cent::Money>;
+            +transfer_to(&self, tok: UserToken, other: &dyn Storage) -> Result<()>;
+            +unsafe store(&self, r: Reservation);
+            +unsafe extract(&self, tok: UserToken) -> Result<Reservation>;
+            +new_reservation(&self, user_id: UserId) -> ReservationId;
+        }
+
+        class ReservationStorageV1 {
+            -reservations: DashMap<ReservationId, Reservation>,
+            -factory: Arc<dyn ReservationFactory>,
+            -checked_rsv(&self, tok: UserToken)\n\t->Result<Ref<ReservationId, Reservation>>;
+            -checked_rsv_mut(&self, tok: UserToken)\n\t-> Result<RefMut<ReservationId, Reservation>>
+            +unsafe from_components(...) -> Self;
+            +add_item(&self, tok: ItemToken) -> Result<()>;
+            +remove_item(&self, tok: ItemToken) -> Result<()>;
+            +summary(&self, tok: UserToken) -> Result<String>;
+            +process(&self, tok: UserToken,\n\top: Box<dyn FnOnce(&Reservation)\n\t\t-> Result<steel_cent::Money>>)\n\t-> Result<steel_cent::Money>;
+            +transfer_to(&self, tok: UserToken, other: &dyn Storage) -> Result<()>;
+            +unsafe store(&self, r: Reservation);
+            +unsafe extract(&self, tok: UserToken) -> Result<Reservation>;
+            +new_reservation(&self, user_id: UserId) -> ReservationId;
+        }
+
+        note right of CreativeReservationStorage::transfer_to
+        unsafe {
+            \tOk(other.store(self.extract(tok)?))
+        }
+        end note
+
+        interface FlightStorage {
+            +query(&self, src: &Address, dest: &Address) -> Result<String>;
+        }
+
+        class FlightStorageV1 {
+            -data: DashMap<FlightId, Flight>,
+            -flights: DashMap<Address, DashMap<Address, Vec<FlightId>>>,
+            +occupy(&self, item_id: &ReservableItemId) -> Result<()>;
+            +release(&self, item_id: &ReservableItemId) -> Result<()>;
+            +query(&self, src: &Address, dest: &Address) -> Result<String>;
+            +inner_item_storage(&self, item_id: &ReservableItemId)\n\t-> Result<Ref<FlightId, Flight>>;
+        }
+
+        interface ItemStorage {
+            +occupy(&self, item_id: &ReservableItemId) -> Result<()>;
+            +release(&self, item_id: &ReservableItemId) -> Result<()>;
+        }
+
+        class ItemSimpleStorage {
+            -items: DashMap<ReservableItemId, Box<dyn ReservableItem>>,
+            -item(&self, id: &ReservableItemId) -> Result<Ref>;
+            +occupy(&self, item_id: &ReservableItemId) -> Result<()>;
+            +release(&self, item_id: &ReservableItemId) -> Result<()>;
+        }
 
         package Data {
-            class Flight
+            class Flight {
+                -id: FlightId,
+                -company_id: String,
+                -plane: PlaneInfo,
+                -src: AirportInfo,
+                -dest: AirportInfo,
+                -items: items::SimpleStorage,
+                +flight_id(&self) -> &FlightId;
+                +company_id(&self) -> &str;
+                +items(&self) -> &items::SimpleStorage;
+            }
+
+            class AirportInfo {
+                -name: String,
+                -addr: Address,
+                +name(&self) -> &str;
+                +addr(&self) -> &Address;
+            }
+
+            class PlaneInfo {
+                -id: String,
+                -r#type: String,
+                +id(&self) -> &str;
+                +r#type(&self) -> &str;
+            }
+
+            class Address {
+                -locations: Vec<String>,
+                +location(&self, level: usize) -> Option<&str>;
+            }
+
+            interface ReservableItem {
+                +id(&self) -> ReservableItemId;
+                +occupy(&self) -> bool;
+                +release(&self) -> Result<()>;
+            }
+
+            class Reservation {
+                -id: ReservationId,
+                -user: UserId,
+                -paid: bool,
+                -items: HashSet<ReservableItemId>,
+                +id(&self) -> ReservationId;
+                +user_id(&self) -> &UserId
+                +pay(&mut self) -> bool
+                +add(&mut self, item: ReservableItemId) -> Result<()>
+                +remove(&mut self, item: &ReservableItemId) -> Result<()>
+                +summary(&self) -> String
+            }
+
+            interface ReservationFactory {
+                +with_user_id(&self, user_id: UserId) -> Reservation;
+            }
+
+            class ReservationFactoryV1 {
+                -next_id: AtomicU64,
+                +unsafe new(init_id: ReservationId) -> Self;
+                +with_user_id(&self, user_id: UserId) -> Reservation;
+            }
+
+            class User {
+                -user_id: UserId,
+                -undone: HashSet<ReservationId>,
+                -withdrawn: HashSet<ReservationId>,
+                +link(&mut self, r: ReservationId);
+                +undone_reservations(&self) -> Vec<ReservationId>;
+                +done_reservations(&self) -> Vec<ReservationId>;
+                +withdraw(&mut self, r_id: &ReservationId) -> Result<()>;
+            }
+
+            Flight --> AirportInfo
+            Flight --> PlaneInfo
+            AirportInfo --> Address
+
+            ReservationFactoryV1 .> Reservation
+            ReservationFactory <|-- ReservationFactoryV1
         }
 
+        UserStorage <|.. UserStorageV1
+
         ReservationStorage <|-- CreativeReservationStorage
+
+        ReservationStorage <|.. ReservationStorageV1
+        CreativeReservationStorage <|.. ReservationStorageV1
+
+        FlightStorage <|.. FlightStorageV1
+        ItemStorage <|.. FlightStorageV1
+
+        ItemStorage <|.. ItemSimpleStorage
+
+        ItemSimpleStorage <-- Flight
+        ReservationStorageV1 --> Reservation
+        ReservationStorageV1 --> ReservationFactory
+
+        UserStorageV1 --> User
+
+        FlightStorageV1 --> Flight
+        FlightStorageV1 --> Address
     }
 
 
-    ReserveTicketsSession --> ReservationStorage
-    ReserveTicketsSession --> CreativeReservationStorage
-    ReserveTicketsSession ..> UserStorage
-    ReserveTicketsSession ..> ItemStorage
+    ReserveTicketsSessionV1 --> ReservationStorage
+    ReserveTicketsSessionV1 --> CreativeReservationStorage
+    ReserveTicketsSessionV1 ..> UserStorage
+    ReserveTicketsSessionV1 ..> ItemStorage
+
+    RefundSessionV1 ..> UserStorage
+    RefundSessionV1 ..> ReservationStorage
+
+    ViewSessionV1 ..> FlightStorage
+
+    ItemSimpleStorage --> ReservableItem
 
 }
+
 
 @enduml
